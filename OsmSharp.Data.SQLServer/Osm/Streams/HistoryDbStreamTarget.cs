@@ -1,6 +1,6 @@
 ﻿// OsmSharp - OpenStreetMap (OSM) SDK
 //
-// Copyright (C) 2013 Abelshausen Ben
+// Copyright (C) 2016 Abelshausen Ben
 //                    Alexander Sinitsyn
 // 
 // This file is part of OsmSharp.
@@ -19,7 +19,6 @@
 // along with OsmSharp. If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using OsmSharp.Osm.Streams;
@@ -31,31 +30,17 @@ using OsmSharp.Osm.Tiles;
 namespace OsmSharp.Data.SQLServer.Osm.Streams
 {
     /// <summary>
-    /// A data processor target for the SqlServer simple schema.
+    /// An osm stream target that loads all data initialized 
     /// </summary>
-    public class SQLServerOsmStreamTarget : OsmStreamTarget{
-        
-        /// <summary>
-        /// Holds the connection.
-        /// </summary>
-        private SqlConnection _connection;
-
-        private DataTable _nodeTable;
-        private DataTable _nodeTagsTable;
-        private DataTable _wayTable;
-        private DataTable _wayTagsTable;
-        private DataTable _wayNodesTable;
-        private DataTable _relationTable;
-        private DataTable _relationMembersTable;
-        private DataTable _relationTagsTable;
-
+    public class HistoryDbStreamTarget : OsmStreamTarget
+    {
         /// <summary>
         /// Flag that indicates if the schema needs to be created if not present.
         /// </summary>
         private readonly bool _createAndDetectSchema;
 
-        private const int BatchNodes     = 100000;
-        private const int BatchWays      = 10000;
+        private const int BatchNodes = 1000000;
+        private const int BatchWays = 100000;
         private const int BatchRelations = 100000;
 
         //int _batch_nodes = 1;
@@ -65,46 +50,51 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
         private readonly string _connectionString;
 
         /// <summary>
-        /// Create a SQLServerSimpleSchemaDataProcessorTarget. Schema will not be created.
+        /// Creates a history db target.
         /// </summary>
-        /// <param name="connectionString">Connection string to the database</param>
-        public SQLServerOsmStreamTarget(string connectionString)
+        public HistoryDbStreamTarget(string connectionString)
         {
             _connectionString = connectionString;
             _createAndDetectSchema = false;
         }
 
         /// <summary>
-        /// Create a SQLServerSimpleSchemaDataProcessorTarget
+        /// Creates a history db target.
         /// </summary>
-        /// <param name="connectionString">Connection string to the database</param>
-        /// <param name="createSchema">If true, will drop and re-create the schema</param>
-        public SQLServerOsmStreamTarget(string connectionString, bool createSchema)
+        public HistoryDbStreamTarget(string connectionString, bool createSchema)
         {
             _connectionString = connectionString;
             _createAndDetectSchema = createSchema;
         }
 
         /// <summary>
-        /// Create a SQLServerSimpleSchemaDataProcessorTarget
+        /// Creates a history db target.
         /// </summary>
-        /// <param name="connection">Connection to the database</param>
-        public SQLServerOsmStreamTarget(SqlConnection connection)
+        public HistoryDbStreamTarget(SqlConnection connection)
         {
             _connection = connection;
             _createAndDetectSchema = false;
         }
 
         /// <summary>
-        /// Create a SQLServerSimpleSchemaDataProcessorTarget
+        /// Creates a history db target.
         /// </summary>
-        /// <param name="connection">Connection to the database</param>
-        /// <param name="createSchema">If true, will drop and re-create the schema</param>
-        public SQLServerOsmStreamTarget(SqlConnection connection, bool createSchema)
+        public HistoryDbStreamTarget(SqlConnection connection, bool createSchema)
         {
             _connection = connection;
             _createAndDetectSchema = createSchema;
         }
+
+        private SqlConnection _connection;
+        
+        private DataTable _nodeTable;
+        private DataTable _nodeTagsTable;
+        private DataTable _wayTable;
+        private DataTable _wayTagsTable;
+        private DataTable _wayNodesTable;
+        private DataTable _relationTable;
+        private DataTable _relationMembersTable;
+        private DataTable _relationTagsTable;
 
         /// <summary>
         /// Initializes the target.
@@ -118,9 +108,8 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
             }
 
             if (_createAndDetectSchema)
-            { 
-                // creates or detects the tables.
-                SQLServerSchemaTools.CreateAndDetect(_connection);
+            { // creates or detects the tables.
+                SchemaTools.SchemaTools.HistoryDbCreateAndDetect(_connection);
             }
 
             CreateNodeTables();
@@ -134,7 +123,8 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
         {
             // create node bulk objects.
             _nodeTable = new DataTable();
-            _nodeTable.Columns.Add(new DataColumn("id", typeof (long)));
+            _nodeTable.BeginLoadData();
+            _nodeTable.Columns.Add(new DataColumn("id", typeof(long)));
             _nodeTable.Columns.Add(new DataColumn("latitude", typeof(int)));
             _nodeTable.Columns.Add(new DataColumn("longitude", typeof(int)));
             _nodeTable.Columns.Add(new DataColumn("changeset_id", typeof(long)));
@@ -147,8 +137,10 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
 
             // create node_tags bulk objects.
             _nodeTagsTable = new DataTable();
-            _nodeTagsTable.Columns.Add(new DataColumn("node_id", typeof (long)));
-            _nodeTagsTable.Columns.Add(new DataColumn("key", typeof (string)));
+            _nodeTagsTable.BeginLoadData();
+            _nodeTagsTable.Columns.Add(new DataColumn("node_id", typeof(long)));
+            _nodeTagsTable.Columns.Add(new DataColumn("version", typeof(int)));
+            _nodeTagsTable.Columns.Add(new DataColumn("key", typeof(string)));
             _nodeTagsTable.Columns.Add(new DataColumn("value", typeof(string)));
         }
 
@@ -156,7 +148,8 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
         {
             // create way bulk objects.
             _wayTable = new DataTable();
-            _wayTable.Columns.Add(new DataColumn("id", typeof (long)));
+            _wayTable.BeginLoadData();
+            _wayTable.Columns.Add(new DataColumn("id", typeof(long)));
             _wayTable.Columns.Add(new DataColumn("changeset_id", typeof(long)));
             _wayTable.Columns.Add(new DataColumn("timestamp", typeof(DateTime)));
             _wayTable.Columns.Add(new DataColumn("visible", typeof(bool)));
@@ -166,22 +159,27 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
 
             // create way_tags bulk objects.
             _wayTagsTable = new DataTable();
-            _wayTagsTable.Columns.Add(new DataColumn("way_id", typeof (long)));
-            _wayTagsTable.Columns.Add(new DataColumn("key", typeof (string)));
+            _wayTagsTable.BeginLoadData();
+            _wayTagsTable.Columns.Add(new DataColumn("way_id", typeof(long)));
+            _wayTagsTable.Columns.Add(new DataColumn("version", typeof(int)));
+            _wayTagsTable.Columns.Add(new DataColumn("key", typeof(string)));
             _wayTagsTable.Columns.Add(new DataColumn("value", typeof(string)));
 
             // create way_nodes bulk objects.
             _wayNodesTable = new DataTable();
-            _wayNodesTable.Columns.Add(new DataColumn("way_id", typeof (long)));
-            _wayNodesTable.Columns.Add(new DataColumn("node_id", typeof (long)));
-            _wayNodesTable.Columns.Add(new DataColumn("sequence_id", typeof (int)));
+            _wayNodesTable.BeginLoadData();
+            _wayNodesTable.Columns.Add(new DataColumn("way_id", typeof(long)));
+            _wayNodesTable.Columns.Add(new DataColumn("version", typeof(int)));
+            _wayNodesTable.Columns.Add(new DataColumn("node_id", typeof(long)));
+            _wayNodesTable.Columns.Add(new DataColumn("sequence_id", typeof(int)));
         }
 
         private void CreateRelationTables()
         {
             // create relation bulk objects.
             _relationTable = new DataTable();
-            _relationTable.Columns.Add(new DataColumn("id", typeof (long)));
+            _relationTable.BeginLoadData();
+            _relationTable.Columns.Add(new DataColumn("id", typeof(long)));
             _relationTable.Columns.Add(new DataColumn("changeset_id", typeof(long)));
             _relationTable.Columns.Add(new DataColumn("timestamp", typeof(DateTime)));
             _relationTable.Columns.Add(new DataColumn("visible", typeof(bool)));
@@ -191,24 +189,26 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
 
             // create relation_tags bulk objects.
             _relationTagsTable = new DataTable();
-            _relationTagsTable.Columns.Add(new DataColumn("relation_id", typeof (long)));
+            _relationTagsTable.BeginLoadData();
+            _relationTagsTable.Columns.Add(new DataColumn("relation_id", typeof(long)));
+            _relationTagsTable.Columns.Add(new DataColumn("version", typeof(int)));
             _relationTagsTable.Columns.Add(new DataColumn("key", typeof(string)));
             _relationTagsTable.Columns.Add(new DataColumn("value", typeof(string)));
 
             // create relation_members bulk objects.
             _relationMembersTable = new DataTable();
-            _relationMembersTable.Columns.Add(new DataColumn("relation_id", typeof (long)));
+            _relationMembersTable.BeginLoadData();
+            _relationMembersTable.Columns.Add(new DataColumn("relation_id", typeof(long)));
+            _relationMembersTable.Columns.Add(new DataColumn("version", typeof(int)));
             _relationMembersTable.Columns.Add(new DataColumn("member_type", typeof(short)));
             _relationMembersTable.Columns.Add(new DataColumn("member_id", typeof(long)));
             _relationMembersTable.Columns.Add(new DataColumn("member_role", typeof(string)));
-            _relationMembersTable.Columns.Add(new DataColumn("sequence_id", typeof (int)));
+            _relationMembersTable.Columns.Add(new DataColumn("sequence_id", typeof(int)));
         }
 
         /// <summary>
         /// Does the actual bulk copy.
         /// </summary>
-        /// <param name="table"></param>
-        /// <param name="tableName"></param>
         private void BulkCopy(DataTable table, string tableName)
         {
             BulkCopy(table, tableName, table.Rows.Count + 1);
@@ -217,14 +217,11 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
         /// <summary>
         /// Does the actual bulk inserts.
         /// </summary>
-        /// <param name="table"></param>
-        /// <param name="tableName"></param>
-        /// <param name="batchSize"></param>
         private void BulkCopy(DataTable table, string tableName, int batchSize)
         {
             if (table == null || table.Rows.Count < 1)
                 return;
-
+            
             using (var bulkCopy = new SqlBulkCopy(_connection))
             {
                 bulkCopy.BulkCopyTimeout = 1200; // 20 minutes. Use a long time as the database can expand, or can be busy
@@ -233,14 +230,16 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
 
                 try
                 {
-                    OsmSharp.Logging.Log.TraceEvent("OsmSharp.Data.SQLServer.Osm.Streams.SQLServerOsmStreamTarget", OsmSharp.Logging.TraceEventType.Information,
-                        "Inserting {0} records into {1}.", table.Rows.Count, tableName);
+                    OsmSharp.Logging.Log.TraceEvent("HistoryDbStreamTarget",
+                        OsmSharp.Logging.TraceEventType.Information,
+                            "Inserting {0} records into {1}.", table.Rows.Count, tableName);
                     bulkCopy.WriteToServer(table);
                 }
                 catch (Exception e)
                 {
-                    OsmSharp.Logging.Log.TraceEvent("OsmSharp.Data.SQLServer.Osm.Streams.SQLServerOsmStreamTarget", OsmSharp.Logging.TraceEventType.Error,
-                        e.ToString());
+                    OsmSharp.Logging.Log.TraceEvent("HistoryDbStreamTarget",
+                        OsmSharp.Logging.TraceEventType.Error,
+                            e.ToString());
                 }
             }
         }
@@ -255,9 +254,8 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
         {
             if (!node.Id.HasValue || !node.Latitude.HasValue || !node.Longitude.HasValue)
                 return;
-
-            DataRow nodeRow = _nodeTable.NewRow();
-            // format data and create parameters.
+            
+            var nodeRow = _nodeTable.NewRow();
             nodeRow["id"] = node.Id.Value;
             var latitude = (int)(node.Latitude.Value * 10000000); // latitude should always contain a value.
             nodeRow["latitude"] = latitude;
@@ -268,19 +266,20 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
             nodeRow["timestamp"] = node.TimeStamp.ConvertToDBValue();
             nodeRow["version"] = node.Version.ConvertToDBValue();
             nodeRow["tile"] = Tile.CreateAroundLocation(node.Latitude.Value, node.Longitude.Value, TileDefaultsForRouting.Zoom).Id;
-            nodeRow["usr"] = node.UserName == null ? DBNull.Value : (object)node.UserName.Truncate(SQLServerSchemaConstants.RelationUsr);
+            nodeRow["usr"] = node.UserName == null ? DBNull.Value : (object)node.UserName.Truncate(SchemaConstants.RelationUsr);
             nodeRow["usr_id"] = node.UserId.ConvertToDBValue();
             _nodeTable.Rows.Add(nodeRow);
 
             // tags.
             if (node.Tags != null)
             {
-                foreach (Tag tag in node.Tags)
+                foreach (var tag in node.Tags)
                 {
-                    DataRow tagRow = _nodeTagsTable.NewRow();
-                    tagRow["key"] = tag.Key.Trim().Truncate(SQLServerSchemaConstants.NodeTagsKey);
+                    var tagRow = _nodeTagsTable.NewRow();
+                    tagRow["key"] = tag.Key.Trim().Truncate(SchemaConstants.NodeTagsKey);
+                    tagRow["version"] = node.Version.ConvertToDBValue();
                     tagRow["node_id"] = node.Id.Value;
-                    tagRow["value"] = tag.Value.Trim().Truncate(SQLServerSchemaConstants.NodeTagsValue);
+                    tagRow["value"] = tag.Value.Trim().Truncate(SchemaConstants.NodeTagsValue);
 
                     _nodeTagsTable.Rows.Add(tagRow);
                 }
@@ -291,28 +290,27 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
             {
                 BulkCopy(_nodeTable, "node");
                 BulkCopy(_nodeTagsTable, "node_tags");
-                CreateNodeTables();
+
+                _nodeTable.Clear();
+                _nodeTagsTable.Clear();
             }
         }
 
         /// <summary>
         /// Adds a way to the target.
         /// </summary>
-        /// <param name="way"></param>
         public override void AddWay(Way way)
         {
             if (!way.Id.HasValue)
                 return; // id should always contain a value.
 
-            DataRow wayRow = _wayTable.NewRow();
-
-            // format data and create parameters.
+            var wayRow = _wayTable.NewRow();
             wayRow["id"] = way.Id.Value;
             wayRow["changeset_id"] = way.ChangeSetId.ConvertToDBValue();
             wayRow["visible"] = way.Visible.HasValue ? (object)(way.Visible.Value ? 1 : 0) : DBNull.Value;
             wayRow["timestamp"] = way.TimeStamp.ConvertToDBValue();
             wayRow["version"] = way.Version.ConvertToDBValue();
-            wayRow["usr"] = way.UserName == null ? DBNull.Value : (object)way.UserName.Truncate(SQLServerSchemaConstants.RelationUsr);
+            wayRow["usr"] = way.UserName == null ? DBNull.Value : (object)way.UserName.Truncate(SchemaConstants.RelationUsr);
             wayRow["usr_id"] = way.UserId.ConvertToDBValue();
 
             // add the way and it's tags.
@@ -323,17 +321,18 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
             {
                 foreach (Tag tag in way.Tags)
                 {
-                    string key = tag.Key.Truncate(SQLServerSchemaConstants.WayTagsKey);
+                    string key = tag.Key.Truncate(SchemaConstants.WayTagsKey);
                     if (string.IsNullOrEmpty(key))
                     {
                         //throw new Exception();
                     }
                     else
                     {
-                        DataRow tagRow = _wayTagsTable.NewRow();
+                        var tagRow = _wayTagsTable.NewRow();
                         tagRow["way_id"] = way.Id.Value;
+                        tagRow["version"] = way.Version.ConvertToDBValue();
                         tagRow["key"] = key;
-                        tagRow["value"] = tag.Value.Truncate(SQLServerSchemaConstants.WayTagsValue);
+                        tagRow["value"] = tag.Value.Truncate(SchemaConstants.WayTagsValue);
 
                         _wayTagsTable.Rows.Add(tagRow);
                     }
@@ -345,8 +344,9 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
             {
                 for (int idx = 0; idx < way.Nodes.Count; idx++)
                 {
-                    DataRow tagRow = _wayNodesTable.NewRow();
+                    var tagRow = _wayNodesTable.NewRow();
                     tagRow["way_id"] = way.Id.Value;
+                    tagRow["version"] = way.Version.ConvertToDBValue();
                     tagRow["node_id"] = way.Nodes[idx];
                     tagRow["sequence_id"] = idx;
 
@@ -367,7 +367,6 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
         /// <summary>
         /// Adds a relation to the target.
         /// </summary>
-        /// <param name="relation"></param>
         public override void AddRelation(Relation relation)
         {
             if (!relation.Id.HasValue)
@@ -381,7 +380,7 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
             relationRow["visible"] = relation.Visible.HasValue ? (object)(relation.Visible.Value ? 1 : 0) : DBNull.Value;
             relationRow["timestamp"] = relation.TimeStamp.ConvertToDBValue();
             relationRow["version"] = relation.Version.ConvertToDBValue();
-            relationRow["usr"] = relation.UserName == null ? DBNull.Value : (object)relation.UserName.Truncate(SQLServerSchemaConstants.RelationUsr);
+            relationRow["usr"] = relation.UserName == null ? DBNull.Value : (object)relation.UserName.Truncate(SchemaConstants.RelationUsr);
             relationRow["usr_id"] = relation.UserId.ConvertToDBValue();
 
             // add the node and it's tags.
@@ -390,12 +389,13 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
             // tags.
             if (relation.Tags != null)
             {
-                foreach (Tag tag in relation.Tags)
+                foreach (var tag in relation.Tags)
                 {
-                    DataRow tagRow = _relationTagsTable.NewRow();
+                    var tagRow = _relationTagsTable.NewRow();
                     tagRow["relation_id"] = relation.Id.Value;
-                    tagRow["key"] = tag.Key.Truncate(SQLServerSchemaConstants.RelationTagsKey);
-                    tagRow["value"] = tag.Value.Truncate(SQLServerSchemaConstants.RelationTagsValue);
+                    tagRow["version"] = relation.Version.ConvertToDBValue();
+                    tagRow["key"] = tag.Key.Truncate(SchemaConstants.RelationTagsKey);
+                    tagRow["value"] = tag.Value.Truncate(SchemaConstants.RelationTagsValue);
 
                     _relationTagsTable.Rows.Add(tagRow);
                 }
@@ -410,9 +410,10 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
 
                     DataRow tagRow = _relationMembersTable.NewRow();
                     tagRow["relation_id"] = relation.Id.Value;
+                    tagRow["version"] = relation.Version.ConvertToDBValue();
                     tagRow["member_type"] = this.ConvertMemberType(relation.Members[idx].MemberType.Value).Value;
                     tagRow["member_id"] = member.MemberId;
-                    tagRow["member_role"] = member.MemberRole.Truncate(SQLServerSchemaConstants.RelationMemberRole);
+                    tagRow["member_role"] = member.MemberRole.Truncate(SchemaConstants.RelationMemberRole);
                     tagRow["sequence_id"] = idx;
 
                     _relationMembersTable.Rows.Add(tagRow);
@@ -432,8 +433,6 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
         /// <summary>
         /// Converts the member type to long.
         /// </summary>
-        /// <param name="memberType"></param>
-        /// <returns></returns>
         private long? ConvertMemberType(OsmGeoType? memberType)
         {
             if (memberType.HasValue)
@@ -448,8 +447,9 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
         /// </summary>
         public override void Flush()
         {
-            OsmSharp.Logging.Log.TraceEvent("OsmSharp.Data.SQLServer.Osm.Streams.SQLServerOsmStreamTarget", OsmSharp.Logging.TraceEventType.Information,
-                "Flushing remaining data");
+            OsmSharp.Logging.Log.TraceEvent("HistoryDbStreamTarget",
+                OsmSharp.Logging.TraceEventType.Information,
+                    "Flushing remaining data...");
             BulkCopy(_nodeTable, "node");
             BulkCopy(_nodeTagsTable, "node_tags");
             _nodeTable.Clear();
@@ -475,20 +475,20 @@ namespace OsmSharp.Data.SQLServer.Osm.Streams
         /// </summary>
         public override void Close()
         {
-            if(_connection != null)
+            if (_connection != null)
             {
-                if(_createAndDetectSchema)
-                {
-                    // Adds constraints
-                    SQLServerSchemaTools.AddConstraints(_connection);
+                if (_createAndDetectSchema)
+                { // adds constraints
+                    // SchemaTools.SchemaTools.AddConstraints(_connection);
                 }
 
                 if (!string.IsNullOrWhiteSpace(_connectionString))
                 {
                     _connection.Close();
                     _connection.Dispose();
-                    OsmSharp.Logging.Log.TraceEvent("OsmSharp.Data.SQLServer.Osm.Streams.SQLServerOsmStreamTarget", OsmSharp.Logging.TraceEventType.Information,
-                        "Database connection closed");
+                    OsmSharp.Logging.Log.TraceEvent("HistoryDbStreamTarget",
+                        OsmSharp.Logging.TraceEventType.Information,
+                            "Database connection closed.");
                 }
             }
             _connection = null;

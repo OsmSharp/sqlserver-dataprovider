@@ -119,7 +119,7 @@ namespace OsmSharp.Data.SQLServer.Test
                 _connection = new SqlConnection(@"Server=TestDataWindows\SQLEXPRESS;Database=osmsharp;User Id=osmsharp;Password=osmsharp;");
                 _connection.Open();
 
-                SQLServerSchemaTools.Remove(_connection);
+                SQLServerSchemaTools.DropSchema(_connection);
             }
             return _connection;
         }
@@ -130,7 +130,7 @@ namespace OsmSharp.Data.SQLServer.Test
         /// <returns></returns>
         public override IDataSourceReadOnly CreateDataSource()
         {
-            return new SQLServerDataSource(this.GetConnection());
+            return new SQLServerSnapshotDb(this.GetConnection());
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace OsmSharp.Data.SQLServer.Test
         /// <returns></returns>
         public override OsmStreamTarget CreateDataStreamTarget()
         {
-            return new SQLServerOsmStreamTarget(this.GetConnection(), true);
+            return new SQLServerSnapshotDbStreamTarget(this.GetConnection(), true);
         }
 
         #endregion

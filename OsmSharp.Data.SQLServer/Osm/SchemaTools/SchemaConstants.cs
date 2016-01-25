@@ -1,6 +1,7 @@
 ﻿// OsmSharp - OpenStreetMap (OSM) SDK
 //
-// Copyright (C) 2013 Simon Hughes
+// Copyright (C) 2016 Simon Hughes
+//                    Ben Abelshausen
 // 
 // This file is part of OsmSharp.
 // 
@@ -22,7 +23,7 @@ namespace OsmSharp.Data.SQLServer.Osm.SchemaTools
     /// <summary>
     /// string length constants that match the SQL DDL schema.
     /// </summary>
-    public static class SQLServerSchemaConstants
+    public static class SchemaConstants
     {
         /// <summary>
         /// dbo.node.usr

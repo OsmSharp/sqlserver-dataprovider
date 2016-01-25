@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="OsmSharp.Data.SQLServer.Test.Functional.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="BelgiumPBFUrl" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ftp://build.osmsharp.com/data/OSM/planet/europe/belgium-latest.osm.pbf</Value>
+    </Setting>
+    <Setting Name="ConnectionString" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Server=DESKTOP-K3IOMIF\SQLEXPRESS;Database=osmsharp;User Id=osmsharp;Password=osmsharp;</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
