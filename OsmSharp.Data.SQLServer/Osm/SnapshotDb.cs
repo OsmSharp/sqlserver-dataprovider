@@ -1,895 +1,559 @@
-﻿//// OsmSharp - OpenStreetMap (OSM) SDK
-////
-//// Copyright (C) 2016 Abelshausen Ben
-////                    Alexander Sinitsyn
-//// 
-//// This file is part of OsmSharp.
-//// 
-//// OsmSharp is free software: you can redistribute it and/or modify
-//// it under the terms of the GNU General Public License as published by
-//// the Free Software Foundation, either version 2 of the License, or
-//// (at your option) any later version.
-//// 
-//// OsmSharp is distributed in the hope that it will be useful,
-//// but WITHOUT ANY WARRANTY; without even the implied warranty of
-//// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//// GNU General Public License for more details.
-//// 
-//// You should have received a copy of the GNU General Public License
-//// along with OsmSharp. If not, see <http://www.gnu.org/licenses/>.
+﻿// OsmSharp - OpenStreetMap (OSM) SDK
+//
+// Copyright (C) 2016 Abelshausen Ben
+//                    Alexander Sinitsyn
+// 
+// This file is part of OsmSharp.
+// 
+// OsmSharp is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// (at your option) any later version.
+// 
+// OsmSharp is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with OsmSharp. If not, see <http://www.gnu.org/licenses/>.
 
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Data.SqlClient;
-//using OsmSharp.Osm.Data;
-//using OsmSharp.Data.SQLServer.Osm.SchemaTools;
-//using OsmSharp.Math.Geo;
-//using OsmSharp.Osm;
-//using OsmSharp.Osm.Filters;
-//using OsmSharp.Collections.Tags;
-//using System.Data;
-//using OsmSharp.Osm.Tiles;
-//using OsmSharp.Osm.Streams;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Data.SqlClient;
+using OsmSharp.Osm.Data;
+using OsmSharp.Data.SQLServer.Osm.SchemaTools;
+using OsmSharp.Math.Geo;
+using OsmSharp.Osm;
+using OsmSharp.Osm.Filters;
+using OsmSharp.Collections.Tags;
+using System.Data;
+using OsmSharp.Osm.Tiles;
+using OsmSharp.Osm.Streams;
+using System.Text;
 
-//namespace OsmSharp.Data.SQLServer.Osm
-//{
-//    /// <summary>
-//    /// Implements a snapshot db storing a snapshot of OSM-data in an SQL-server database.
-//    /// </summary>
-//    public class SQLServerSnapshotDb : ISnapshotDb, IDisposable
-//    {
-//        private readonly string _connectionString; // Holds the connection string.
-//        private readonly bool _createAndDetectSchema; // Flag that indicates if the schema needs to be created if not present.
+namespace OsmSharp.Data.SQLServer.Osm
+{
+    /// <summary>
+    /// Implements a snapshot db storing a snapshot of OSM-data in an SQL-server database.
+    /// </summary>
+    public class SnapshotDb : ISnapshotDb, IDisposable
+    {
+        private readonly string _connectionString; // Holds the connection string.
+        private readonly bool _createAndDetectSchema; // Flag that indicates if the schema needs to be created if not present.
 
-//        /// <summary>
-//        /// Creates a snapshot db.
-//        /// </summary>
-//        public SQLServerSnapshotDb(string connectionString)
-//        {
-//            _connectionString = connectionString;
-//            _createAndDetectSchema = false;
-//        }
+        /// <summary>
+        /// Creates a snapshot db.
+        /// </summary>
+        public SnapshotDb(string connectionString)
+        {
+            _connectionString = connectionString;
+            _createAndDetectSchema = false;
+        }
 
-//        /// <summary>
-//        /// Creates a snapshot db.
-//        /// </summary>
-//        public SQLServerSnapshotDb(SqlConnection connection)
-//        {
-//            _connection = connection;
-//            _createAndDetectSchema = false;
-//        }
+        /// <summary>
+        /// Creates a snapshot db.
+        /// </summary>
+        public SnapshotDb(SqlConnection connection)
+        {
+            _connection = connection;
+            _createAndDetectSchema = false;
+        }
 
-//        /// <summary>
-//        /// Creates a snapshot db.
-//        /// </summary>
-//        public SQLServerSnapshotDb(SqlConnection connection, bool createSchema)
-//        {
-//            _connection = connection;
-//            _createAndDetectSchema = createSchema;
-//        }
+        /// <summary>
+        /// Creates a snapshot db.
+        /// </summary>
+        public SnapshotDb(SqlConnection connection, bool createSchema)
+        {
+            _connection = connection;
+            _createAndDetectSchema = createSchema;
+        }
 
-//        /// <summary>
-//        /// Creates a snapshot db.
-//        /// </summary>
-//        public SQLServerSnapshotDb(string connectionString, bool createSchema)
-//        {
-//            _connectionString = connectionString;
-//            _createAndDetectSchema = createSchema;
-//        }
+        /// <summary>
+        /// Creates a snapshot db.
+        /// </summary>
+        public SnapshotDb(string connectionString, bool createSchema)
+        {
+            _connectionString = connectionString;
+            _createAndDetectSchema = createSchema;
+        }
 
-//        private SqlConnection _connection; // Holds the connection to the SQLServer db.
+        private SqlConnection _connection; // Holds the connection to the SQLServer db.
 
-//        /// <summary>
-//        /// Creates a new/gets the existing connection.
-//        /// </summary>
-//        /// <returns></returns>
-//        private SqlConnection GetConnection()
-//        {
-//            if (_connection == null)
-//            {
-//                _connection = new SqlConnection(_connectionString);
-//                _connection.Open();
+        /// <summary>
+        /// Gets the connection.
+        /// </summary>
+        private SqlConnection GetConnection()
+        {
+            if(_connection == null)
+            {
+                _connection = new SqlConnection(_connectionString);
+                _connection.Open();
+            }
+            return _connection;
+        }
 
-//                if (_createAndDetectSchema)
-//                { // creates or detects the tables.
-//                    SQLServerSchemaTools.CreateAndDetect(_connection);
-//                }
-//            }
-//            return _connection;
-//        }
+        /// <summary>
+        /// Gets the sql command.
+        /// </summary>
+        private SqlCommand GetCommand(string sql)
+        {
+            return new SqlCommand(sql, this.GetConnection());
+        }
 
-//        /// <summary>
-//        /// Returns all the relations with the given ids.
-//        /// </summary>
-//        /// <param name="ids"></param>
-//        /// <returns></returns>
-//        public override IList<Relation> GetRelations(IList<long> ids)
-//        {
-//            if (ids.Count > 0)
-//            {
-//                SqlConnection con = this.GetConnection();
+        /// <summary>
+        /// Gets all the objects in the form of an osm stream source.
+        /// </summary>
+        /// <returns></returns>
+        public OsmStreamSource Get()
+        {
+            throw new NotImplementedException();
+        }
 
-//                // STEP2: Load ways.
-//                Dictionary<long, Relation> relations = new Dictionary<long, Relation>();
-//                string sql;
-//                SqlCommand com;
-//                SqlDataReader reader;
-//                for (int idx_1000 = 0; idx_1000 <= ids.Count / 1000; idx_1000++)
-//                {
-//                    int start_idx = idx_1000 * 1000;
-//                    int stop_idx = System.Math.Min((idx_1000 + 1) * 1000, ids.Count);
+        /// <summary>
+        /// Returns all the objects within a given bounding box and filtered by a given filter.
+        /// </summary>
+        public IList<OsmGeo> Get(float minLatitude, float minLongitude, float maxLatitude, float maxLongitude, Filter filter)
+        {
+            throw new NotImplementedException();
+        }
 
-//                    sql = "SELECT id, changeset_id, visible, timestamp, version, usr, usr_id FROM relation WHERE (id IN ({0})) ";
-//                    string ids_string = this.ConstructIdList(ids, start_idx, stop_idx);
-//                    if (ids_string.Length > 0)
-//                    {
-//                        sql = string.Format(sql, ids_string);
-//                        com = new SqlCommand(sql);
-//                        com.Connection = con;
-//                        reader = com.ExecuteReader();
-//                        Relation relation;
-//                        while (reader.Read())
-//                        {
-//                            long id = reader.GetInt64(0);
-//                            long? changeset_id = reader.IsDBNull(1) ? null : (long?)reader.GetInt64(1);
-//                            bool? visible = reader.IsDBNull(2) ? null : (bool?)(reader.GetValue(2));
-//                            DateTime? timestamp = reader.IsDBNull(3) ? null : (DateTime?)reader.GetDateTime(3);
-//                            ulong? version = reader.IsDBNull(4) ? null : (ulong?)reader.GetInt32(4);
-//                            string user = reader.IsDBNull(5) ? null : reader.GetString(5);
-//                            long? user_id = reader.IsDBNull(6) ? null : (long?)reader.GetInt32(6);
+        /// <summary>
+        /// Clears all data.
+        /// </summary>
+        public void Clear()
+        {
+            SchemaTools.SchemaTools.SnapshotDbDeleteAllData(this.GetConnection());
+        }
 
-//                            // create way.
-//                            relation = new Relation();
-//                            relation.Id = id;
-//                            relation.Version = version;
-//                            relation.UserName = user;
-//                            relation.UserId = user_id;
-//                            relation.Visible = visible;
-//                            relation.TimeStamp = timestamp;
-//                            relation.ChangeSetId = changeset_id;
+        /// <summary>
+        /// Adds or updates the given osm object in the db exactly as given.
+        /// </summary>
+        /// <remarks>
+        /// - Replaces objects that already exist with the given id.
+        /// </remarks>
+        public void AddOrUpdate(OsmGeo osmGeo)
+        {
+            if (osmGeo == null) throw new ArgumentNullException();
+            if (!osmGeo.Id.HasValue) throw new ArgumentException("Objects without an id cannot be added!");
 
-//                            relations.Add(relation.Id.Value, relation);
-//                        }
-//                        reader.Close();
-//                    }
-//                }
+            switch (osmGeo.Type)
+            {
+                case OsmGeoType.Node:
+                    this.AddOrUpdateNode(osmGeo as Node);
+                    break;
+                case OsmGeoType.Way:
+                    this.AddOrUpdateWay(osmGeo as Way);
+                    break;
+                case OsmGeoType.Relation:
+                    this.AddOrUpdateRelation(osmGeo as Relation);
+                    break;
+            }
+        }
 
-//                //STEP3: Load all relation-member relations
-//                List<long> missing_node_ids = new List<long>();
-//                for (int idx_1000 = 0; idx_1000 <= ids.Count / 1000; idx_1000++)
-//                {
-//                    int start_idx = idx_1000 * 1000;
-//                    int stop_idx = System.Math.Min((idx_1000 + 1) * 1000, ids.Count);
+        /// <summary>
+        /// Adds or updates osm objects in the db exactly as they are given.
+        /// </summary>
+        /// <remarks>
+        /// - Replaces objects that already exist with the given id.
+        /// </remarks>
+        public void AddOrUpdate(IEnumerable<OsmGeo> osmGeos)
+        {
+            foreach (var osmGeo in osmGeos)
+            {
+                this.AddOrUpdate(osmGeos);
+            }
+        }
 
-//                    sql = "SELECT relation_id, member_type, member_id, member_role, sequence_id FROM relation_members WHERE (relation_id IN ({0})) ORDER BY sequence_id";
-//                    string ids_string = this.ConstructIdList(ids, start_idx, stop_idx);
-//                    if (ids_string.Length > 0)
-//                    {
-//                        sql = string.Format(sql, ids_string);
-//                        com = new SqlCommand(sql);
-//                        com.Connection = con;
-//                        reader = com.ExecuteReader();
-//                        while (reader.Read())
-//                        {
-//                            long relation_id = reader.GetInt64(0);
-//                            long member_type = reader.GetInt32(1);
-//                            long? member_id = reader.IsDBNull(2) ? null : (long?)reader.GetInt64(2);
-//                            string member_role = reader.IsDBNull(3) ? null : reader.GetString(3);
+        /// <summary>
+        /// Gets an osm object of the given type and the given id.
+        /// </summary>
+        public OsmGeo Get(OsmGeoType type, long id)
+        {
+            switch (type)
+            {
+                case OsmGeoType.Node:
+                    return this.GetNode(id);
+                case OsmGeoType.Way:
+                    return this.GetWay(id);
+                case OsmGeoType.Relation:
+                    return this.GetRelation(id);
+            }
+            return null;
+        }
 
-//                            Relation relation;
-//                            if (relations.TryGetValue(relation_id, out relation))
-//                            {
-//                                if (relation.Members == null)
-//                                {
-//                                    relation.Members = new List<RelationMember>();
-//                                }
-//                                RelationMember member = new RelationMember();
-//                                member.MemberId = member_id;
-//                                member.MemberRole = member_role;
-//                                member.MemberType = this.ConvertMemberType(member_type);
+        /// <summary>
+        /// Gets all osm objects with the given types and the given id's.
+        /// </summary>
+        public IList<OsmGeo> Get(IList<OsmGeoType> type, IList<long> id)
+        {
+            if (type == null) { throw new ArgumentNullException("type"); }
+            if (id == null) { throw new ArgumentNullException("id"); }
+            if (id.Count != type.Count) { throw new ArgumentException("Type and id lists need to have the same size."); }
 
-//                                relation.Members.Add(member);
-//                            }
-//                        }
-//                        reader.Close();
-//                    }
-//                }
+            var result = new List<OsmGeo>();
+            for (int i = 0; i < id.Count; i++)
+            {
+                result.Add(this.Get(type[i], id[i]));
+            }
+            return result;
+        }
 
-//                //STEP4: Load all tags.
-//                for (int idx_1000 = 0; idx_1000 <= ids.Count / 1000; idx_1000++)
-//                {
-//                    int start_idx = idx_1000 * 1000;
-//                    int stop_idx = System.Math.Min((idx_1000 + 1) * 1000, ids.Count);
+        /// <summary>
+        /// Deletes the osm object with the given type, the given id without applying a changeset.
+        /// </summary>
+        public bool Delete(OsmGeoType type, long id)
+        {
+            SqlCommand command = null;
+            switch (type)
+            {
+                case OsmGeoType.Node:
+                    command = this.GetCommand(
+                        string.Format("DELETE FROM node_tag WHERE (node_id IN ({0})", 
+                            id.ToInvariantString()));
+                    command.ExecuteNonQuery();
+                    command = this.GetCommand(
+                        string.Format("DELETE FROM node WHERE (id IN ({0})",
+                            id.ToInvariantString()));
+                    break;
+                case OsmGeoType.Way:
+                    command = this.GetCommand(
+                        string.Format("DELETE FROM way_tags WHERE (way_id IN ({0})",
+                            id.ToInvariantString()));
+                    command.ExecuteNonQuery();
+                    command = this.GetCommand(
+                        string.Format("DELETE FROM way_nodes WHERE (way_id IN ({0})",
+                            id.ToInvariantString()));
+                    command.ExecuteNonQuery();
+                    command = this.GetCommand(
+                        string.Format("DELETE FROM way WHERE (id IN ({0})",
+                            id.ToInvariantString()));
+                    break;
+                case OsmGeoType.Relation:
+                    command = this.GetCommand(
+                        string.Format("DELETE FROM relation_tags WHERE (relation_id IN ({0})",
+                            id.ToInvariantString()));
+                    command.ExecuteNonQuery();
+                    command = this.GetCommand(
+                        string.Format("DELETE FROM relation_members WHERE (relation_id IN ({0})",
+                            id.ToInvariantString()));
+                    command.ExecuteNonQuery();
+                    command = this.GetCommand(
+                        string.Format("DELETE FROM relation WHERE (id IN ({0})",
+                            id.ToInvariantString()));
+                    break;
+            }
+            return command.ExecuteNonQuery() > 0;
+        }
 
-//                    sql = "SELECT * FROM relation_tags WHERE (relation_id IN ({0})) ";
-//                    string ids_string = this.ConstructIdList(ids, start_idx, stop_idx);
-//                    if (ids_string.Length > 0)
-//                    {
-//                        sql = string.Format(sql, ids_string);
-//                        com = new SqlCommand(sql);
-//                        com.Connection = con;
-//                        reader = com.ExecuteReader();
-//                        while (reader.Read())
-//                        {
-//                            long id = reader.GetInt64(0);
-//                            string key = reader.GetString(1);
-//                            object value_object = reader[2];
-//                            string value = string.Empty;
-//                            if (value_object != null && value_object != DBNull.Value)
-//                            {
-//                                value = (string)value_object;
-//                            }
+        /// <summary>
+        /// Deletes all osm objects with the given types and the given id's.
+        /// </summary>
+        public IList<bool> Delete(IList<OsmGeoType> type, IList<long> id)
+        {
+            if (type == null) { throw new ArgumentNullException("type"); }
+            if (id == null) { throw new ArgumentNullException("id"); }
+            if (id.Count != type.Count) { throw new ArgumentException("Type and id lists need to have the same size."); }
 
-//                            Relation relation;
-//                            if (relations.TryGetValue(id, out relation))
-//                            {
-//                                if (relation.Tags == null)
-//                                {
-//                                    relation.Tags = new TagsCollection();
-//                                }
-//                                relation.Tags.Add(key, value);
-//                            }
-//                        }
-//                        reader.Close();
-//                    }
-//                }
+            var result = new List<bool>();
+            for (int i = 0; i < id.Count; i++)
+            {
+                result.Add(this.Delete(type[i], id[i]));
+            }
+            return result;
+        }
 
-//                return relations.Values.ToList<Relation>();
-//            }
-//            return new List<Relation>();
-//        }
-//        /// <summary>
-//        /// Returns all relations that contain the given object.
-//        /// </summary>
-//        /// <param name="type"></param>
-//        /// <param name="id"></param>
-//        /// <returns></returns>
-//        public override IList<Relation> GetRelationsFor(OsmGeoType type, long id)
-//        {
-//            SqlConnection con = GetConnection();
-//            SqlCommand com;
-//            SqlDataReader reader;
+        /// <summary>
+        /// Applies the given changeset.
+        /// </summary>
+        /// <param name="changeset">The changeset to apply.</param>
+        /// <param name="atomic">Then true, it's the entire changeset or nothing. When false the changeset is applied using best-effort.</param>
+        /// <returns>True when the entire changeset was applied without issues, false otherwise.</returns>
+        public bool ApplyChangeset(ChangeSet changeset, bool atomic = false)
+        {
+            throw new NotImplementedException();
+        }
 
-//            string sql = "SELECT relation_id FROM relation_members WHERE (member_id = @member_id and member_type = @member_type) ORDER BY sequence_id";
-//            com = new SqlCommand(sql);
-//            com.Connection = con;
-//            com.Parameters.Add(new SqlParameter("member_id", SqlDbType.BigInt));
-//            com.Parameters.Add(new SqlParameter("member_type", SqlDbType.Int));
-//            com.Parameters[0].Value = id;
-//            com.Parameters[1].Value = this.ConvertMemberType(type).Value;
-
-//            HashSet<long> ids = new HashSet<long>();
-//            reader = com.ExecuteReader();
-//            while (reader.Read())
-//            {
-//                ids.Add(reader.GetInt64(0));
-//            }
-//            reader.Close();
-
-//            return this.GetRelations(ids.ToList<long>());
-//        }
-
-
-//        /// <summary>
-//        /// Converts the member type id to the relationmembertype enum.
-//        /// </summary>
-//        /// <param name="member_type"></param>
-//        /// <returns></returns>
-//        private OsmGeoType? ConvertMemberType(long member_type)
-//        {
-//            switch (member_type)
-//            {
-//                case (long)OsmGeoType.Node:
-//                    return OsmGeoType.Node;
-//                case (long)OsmGeoType.Way:
-//                    return OsmGeoType.Way;
-//                case (long)OsmGeoType.Relation:
-//                    return OsmGeoType.Relation;
-//            }
-//            throw new ArgumentOutOfRangeException("Invalid member type.");
-//        }
-
-//        /// <summary>
-//        /// Converts the member type to long.
-//        /// </summary>
-//        /// <param name="memberType"></param>
-//        /// <returns></returns>
-//        private long? ConvertMemberType(OsmGeoType? memberType)
-//        {
-//            if (memberType.HasValue)
-//            {
-//                return (long)memberType.Value;
-//            }
-//            return null;
-//        }
-
-//        /// <summary>
-//        /// Returns all ways with the given ids.
-//        /// </summary>
-//        /// <param name="ids"></param>
-//        /// <returns></returns>
-//        public override IList<Way> GetWays(IList<long> ids)
-//        {
-//            if (ids.Count > 0)
-//            {
-//                SqlConnection con = this.GetConnection();
-
-//                // STEP2: Load ways.
-//                Dictionary<long, Way> ways = new Dictionary<long, Way>();
-//                string sql;
-//                SqlCommand com;
-//                SqlDataReader reader;
-//                for (int idx_1000 = 0; idx_1000 <= ids.Count / 1000; idx_1000++)
-//                {
-//                    int start_idx = idx_1000 * 1000;
-//                    int stop_idx = System.Math.Min((idx_1000 + 1) * 1000, ids.Count);
-
-//                    sql = "SELECT id, changeset_id, timestamp, visible, version, usr, usr_id FROM way WHERE (id IN ({0})) ";
-//                    string ids_string = this.ConstructIdList(ids,start_idx,stop_idx);
-//                    if(ids_string.Length > 0)
-//                    {
-//                        sql = string.Format(sql, ids_string);
-//                        com = new SqlCommand(sql);
-//                        com.Connection = con;
-//                        reader = com.ExecuteReader();
-//                        Way way;
-//                        while (reader.Read())
-//                        {
-//                            long id = reader.GetInt64(0);
-//                            long? changeset_id = reader.IsDBNull(1) ? null : (long?)reader.GetInt64(1);
-//                            DateTime? timestamp = reader.IsDBNull(2) ? null : (DateTime?)reader.GetDateTime(2);
-//                            bool? visible = reader.IsDBNull(3) ? null : (bool?)(reader.GetValue(3));
-//                            ulong? version = reader.IsDBNull(4) ? null : (ulong?)reader.GetInt32(4);
-//                            string user = reader.IsDBNull(5) ? null : reader.GetString(5);
-//                            long? user_id = reader.IsDBNull(6) ? null : (long?)reader.GetInt32(6);
-
-//                            // create way.
-//                            way = new Way();
-//                            way.Id = id;
-//                            way.Version = version;
-//                            way.UserName = user;
-//                            way.UserId = user_id;
-//                            way.Visible = visible;
-//                            way.TimeStamp = timestamp;
-//                            way.ChangeSetId = changeset_id;
-
-//                            ways.Add(way.Id.Value, way);
-//                        }
-//                        reader.Close();
-//                    }
-//                }
-
-//                //STEP3: Load all node-way relations
-//                List<long> missing_node_ids = new List<long>();
-//                for (int idx_1000 = 0; idx_1000 <= ids.Count / 1000; idx_1000++)
-//                {
-//                    int start_idx = idx_1000 * 1000;
-//                    int stop_idx = System.Math.Min((idx_1000 + 1) * 1000, ids.Count);
-
-//                    sql = "SELECT * FROM way_nodes WHERE (way_id IN ({0})) ORDER BY sequence_id";
-//                    string ids_string = this.ConstructIdList(ids, start_idx, stop_idx);
-//                    if (ids_string.Length > 0)
-//                    {
-//                        sql = string.Format(sql, ids_string);
-//                        com = new SqlCommand(sql);
-//                        com.Connection = con;
-//                        reader = com.ExecuteReader();
-//                        while (reader.Read())
-//                        {
-//                            long id = reader.GetInt64(0);
-//                            long node_id = reader.GetInt64(1);
-//                            long sequence_id = reader.GetInt32(2);
-
-//                            Way way;
-//                            if (ways.TryGetValue(id, out way))
-//                            {
-//                                if (way.Nodes == null)
-//                                {
-//                                    way.Nodes = new List<long>();
-//                                }
-//                                way.Nodes.Add(node_id);
-//                            }
-//                        }
-//                        reader.Close();
-//                    }
-//                }
-
-//                //STEP4: Load all tags.
-//                for (int idx_1000 = 0; idx_1000 <= ids.Count / 1000; idx_1000++)
-//                {
-//                    int start_idx = idx_1000 * 1000;
-//                    int stop_idx = System.Math.Min((idx_1000 + 1) * 1000, ids.Count);
-
-//                    sql = "SELECT * FROM way_tags WHERE (way_id IN ({0})) ";
-//                    string ids_string = this.ConstructIdList(ids, start_idx, stop_idx);
-//                    if (ids_string.Length > 0)
-//                    {
-//                        sql = string.Format(sql, ids_string);
-//                        com = new SqlCommand(sql);
-//                        com.Connection = con;
-//                        reader = com.ExecuteReader();
-//                        while (reader.Read())
-//                        {
-//                            long id = reader.GetInt64(0);
-//                            string key = reader.GetString(1);
-//                            object value_object = reader[2];
-//                            string value = string.Empty;
-//                            if (value_object != null && value_object != DBNull.Value)
-//                            {
-//                                value = (string)value_object;
-//                            }
-
-//                            Way way;
-//                            if (ways.TryGetValue(id, out way))
-//                            {
-//                                if (way.Tags == null)
-//                                {
-//                                    way.Tags = new TagsCollection();
-//                                }
-//                                way.Tags.Add(key, value);
-//                            }
-//                        }
-//                        reader.Close();
-//                    }
-//                }
-
-//                return ways.Values.ToList<Way>();
-//            }
-//            return new List<Way>();
-//        }
-
-//        /// <summary>
-//        /// Returns all ways using the given node.
-//        /// </summary>
-//        /// <param name="id"></param>
-//        /// <returns></returns>
-//        public override IList<Way> GetWaysFor(long id)
-//        {
-//            List<long> ids = new List<long>();
-//            ids.Add(id);
-//            return this.GetWaysFor(ids);
-//        }
-
-//        /// <summary>
-//        /// Returns all ways using any of the given nodes.
-//        /// </summary>
-//        /// <param name="ids"></param>
-//        /// <returns></returns>
-//        public IList<Way> GetWaysFor(List<long> ids)
-//        {
-//            if (ids.Count > 0)
-//            {
-//                SqlConnection con = this.GetConnection();
-
-//                List<long> way_ids = new List<long>();
-//                for (int idx_100 = 0; idx_100 <= ids.Count / 100; idx_100++)
-//                {
-//                    // STEP1: Load ways that exist for the given nodes.
-//                    string sql = "SELECT * FROM way_nodes WHERE (node_id IN ({0})) ";
-//                    int start_idx = idx_100 * 100;
-//                    int stop_idx = System.Math.Min((idx_100 + 1) * 100, ids.Count);
-//                    string ids_string = this.ConstructIdList(ids, start_idx, stop_idx);
-//                    if (ids_string.Length > 0)
-//                    {
-//                        sql = string.Format(sql, ids_string);
-//                        SqlCommand com = new SqlCommand(sql);
-//                        com.Connection = con;
-//                        SqlDataReader reader = com.ExecuteReader();
-
-//                        while (reader.Read())
-//                        {
-//                            long id = reader.GetInt64(0);
-//                            if (!way_ids.Contains(id))
-//                            {
-//                                way_ids.Add(id);
-//                            }
-//                        }
-//                        reader.Close();
-//                        com.Dispose();
-//                    }
-//                }
-
-//                return this.GetWays(way_ids);
-//            }
-//            return new List<Way>();
-//        }
-
-//        #region Tile Calculations
-
-//        uint xy2tile(uint x, uint y)
-//        {
-//            uint tile = 0;
-//            int i;
-
-//            for (i = 15; i >= 0; i--)
-//            {
-//                tile = (tile << 1) | ((x >> i) & 1);
-//                tile = (tile << 1) | ((y >> i) & 1);
-//            }
-
-//            return tile;
-//        }
-
-//        uint lon2x(double lon)
-//        {
-//            return (uint)System.Math.Floor(((lon + 180.0) * 65536.0 / 360.0));
-//        }
-
-//        uint lat2y(double lat)
-//        {
-//            return (uint)System.Math.Floor(((lat + 90.0) * 65536.0 / 180.0));
-//        }
-
-//        #endregion
+        /// <summary>
+        /// Disposes of all resources associated with this db.
+        /// </summary>
+        public void Dispose()
+        {
+            _connection.Dispose();
+        }
         
-//        /// <summary>
-//        /// Constructs an id list for SQL.
-//        /// </summary>
-//        /// <param name="ids"></param>
-//        /// <returns></returns>
-//        private string ConstructIdList(IList<long> ids)
-//        {
-//            return this.ConstructIdList(ids, 0, ids.Count);
-//        }
+        /// <summary>
+        /// Adds or updates a node.
+        /// </summary>
+        /// <param name="node"></param>
+        private void AddOrUpdateNode(Node node)
+        {
+            var cmd = this.GetCommand("DELETE node_tags where node_id = @node_id");
+            cmd.Parameters.AddWithValue("node_id", node.Id.Value);
+            cmd.ExecuteNonQuery();
 
-//        /// <summary>
-//        /// Constructs an id list for SQL for only the specified section of ids.
-//        /// </summary>
-//        /// <param name="ids"></param>
-//        /// <param name="start_idx"></param>
-//        /// <param name="end_idx"></param>
-//        /// <returns></returns>
-//        private string ConstructIdList(IList<long> ids,int start_idx,int end_idx)
-//        {
-//            string return_string = string.Empty;
-//            if (ids.Count > 0 && ids.Count > start_idx)
-//            {
-//                return_string = return_string + ids[start_idx].ToString();
-//                for (int i = start_idx + 1; i < end_idx; i++)
-//                {
-//                    return_string = return_string + "," + ids[i].ToString();
-//                }
-//            }
-//            return return_string;
-//        }
+            cmd = this.GetCommand(
+                "UPDATE node SET " +
+                "latitude=@latitude, longitude=@longitude, changeset_id=@changeset_id, " +
+                "visible=@visible, timestamp=@timestamp, tile=@tile, " +
+                "version=@version, usr=@usr, usr_id=@usr_id, " +
+                "WHERE id=@id");
+            cmd.Parameters.AddWithValue("id", node.Id.Value);
+            cmd.Parameters.AddWithValue("latitude", (int)(node.Latitude.Value * 10000000));
+            cmd.Parameters.AddWithValue("longitude", (int)(node.Longitude.Value * 10000000));
+            cmd.Parameters.AddWithValue("changeset_id", node.ChangeSetId.Value);
+            cmd.Parameters.AddWithValue("visible", node.Visible.Value);
+            cmd.Parameters.AddWithValue("timestamp", node.TimeStamp.Value);
+            cmd.Parameters.AddWithValue("tile", Tile.CreateAroundLocation(node.Latitude.Value, node.Longitude.Value,
+                TileDefaultsForRouting.Zoom).Id);
+            cmd.Parameters.AddWithValue("version", node.Version.Value);
+            cmd.Parameters.AddWithValue("usr", node.UserName);
+            cmd.Parameters.AddWithValue("usr_id", node.UserId.Value);
 
-//        /// <summary>
-//        /// Loads all tags for the given nodes.
-//        /// </summary>
-//        /// <param name="nodes"></param>
-//        private void LoadNodeTags(Dictionary<long,Node> nodes)
-//        {
-//            if (nodes.Count > 0)
-//            {
-//                for (int idx_1000 = 0; idx_1000 <= nodes.Count / 1000; idx_1000++)
-//                {
-//                    string sql = "SELECT * FROM node_tags WHERE (node_id IN ({0})) ";
-//                    int start_idx = idx_1000 * 1000;
-//                    int stop_idx = System.Math.Min((idx_1000 + 1) * 1000,nodes.Count);
-//                    string ids = this.ConstructIdList(nodes.Keys.ToList<long>(), start_idx,stop_idx);
-//                    if(ids.Length > 0)
-//                    {
-//                        sql = string.Format(sql, ids);
-//                        SqlConnection con = this.GetConnection();
-//                        SqlCommand com = new SqlCommand(sql);
-//                        com.Connection = con;
-//                        SqlDataReader reader = com.ExecuteReader();
-//                        while (reader.Read())
-//                        {
-//                            long returned_id = reader.GetInt64(0);
-//                            string key = reader.IsDBNull(1) ? null : reader.GetString(1);
-//                            string val = reader.IsDBNull(2) ? null : reader.GetString(2);
+            if (cmd.ExecuteNonQuery() == 0)
+            { // oeps, node did not exist, insert.
+                cmd = this.GetCommand(
+                    "INSERT INTO node (id,latitude,longitude,changeset_id,visible,timestamp,tile,version,usr,usr_id) " +
+                    "VALUES(@id,@latitude,@longitude,@changeset_id,@visible,@timestamp,@tile,version,@usr,@usr_id)");
+                cmd.Parameters.AddWithValue("id", node.Id.Value);
+                cmd.Parameters.AddWithValue("latitude", (int)(node.Latitude.Value * 10000000));
+                cmd.Parameters.AddWithValue("longitude", (int)(node.Longitude.Value * 10000000));
+                cmd.Parameters.AddWithValue("changeset_id", node.ChangeSetId.Value);
+                cmd.Parameters.AddWithValue("visible", node.Visible.Value);
+                cmd.Parameters.AddWithValue("timestamp", node.TimeStamp.Value);
+                cmd.Parameters.AddWithValue("tile", Tile.CreateAroundLocation(node.Latitude.Value, node.Longitude.Value,
+                    TileDefaultsForRouting.Zoom).Id);
+                cmd.Parameters.AddWithValue("version", node.Version.Value);
+                cmd.Parameters.AddWithValue("usr", node.UserName);
+                cmd.Parameters.AddWithValue("usr_id", node.UserId.Value);
+            }
 
-//                            Node node;
-//                            if (nodes.TryGetValue(returned_id, out node))
-//                            {
-//                                if (node.Tags == null)
-//                                {
-//                                    node.Tags = new TagsCollection();
-//                                }
-//                                node.Tags.Add(key, val);
-//                            }
-//                        }
-//                        reader.Close();
-//                    }
-//                }
-//            }
-//        }
+            cmd = this.GetCommand(string.Empty);
+            var cmdText = new StringBuilder("INSERT into node_tags (node_id,key,value) VALUES ");
+            if (node.Tags != null)
+            {
+                cmd.Parameters.AddWithValue("node_id", node.Id.Value);
+                var t = 0;
+                foreach (var tag in node.Tags)
+                {
+                    cmdText.Append(string.Format("(@node_id, @key_id_{0}, @value_id_{0})", t));
+                    cmd.Parameters.AddWithValue(string.Format("key_id_{0}", t), tag.Key);
+                    cmd.Parameters.AddWithValue(string.Format("value_id_{0}", t), tag.Value);
+                    t++;
+                }
+                if (t > 0)
+                {
+                    cmd.CommandText = cmdText.ToInvariantString();
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
 
-//        /// <summary>
-//        /// Closes this datasource.
-//        /// </summary>
-//        public void Close()
-//        {
-//            if (_connection != null)
-//            {
-//                if (!string.IsNullOrWhiteSpace(_connectionString))
-//                { // only close connection if it was created here!
-//                    _connection.Close();
-//                    _connection.Dispose();
-//                    _connection = null;
-//                }
-//            }
-//        }
+        /// <summary>
+        /// Adds or updates a way.
+        /// </summary>
+        private void AddOrUpdateWay(Way way)
+        {
+            var cmd = this.GetCommand("DELETE way_tags where way_id = @way_id");
+            cmd.Parameters.AddWithValue("way_id", way.Id.Value);
+            cmd.ExecuteNonQuery();
 
-//        /// <summary>
-//        /// Diposes the resources used in this datasource.
-//        /// </summary>
-//        public void Dispose()
-//        {
-//            _connection.Close();
-//            _connection.Dispose();
-//            _connection = null;
-//        }
+            cmd = this.GetCommand("DELETE way_nodes where way_id = @way_id");
+            cmd.Parameters.AddWithValue("way_id", way.Id.Value);
+            cmd.ExecuteNonQuery();
 
-//        /// <summary>
-//        /// Clears all data.
-//        /// </summary>
-//        public void Clear()
-//        {
-//            SchemaTools.SQLServerSchemaTools.DeleteAllData(
-//                this.GetConnection());
-//        }
+            cmd = this.GetCommand(
+                "UPDATE way SET " +
+                "changeset_id=@changeset_id, " +
+                "visible=@visible, timestamp=@timestamp, " +
+                "version=@version, usr=@usr, usr_id=@usr_id, " +
+                "WHERE id=@id");
+            cmd.Parameters.AddWithValue("id", way.Id.Value);
+            cmd.Parameters.AddWithValue("changeset_id", way.ChangeSetId.Value);
+            cmd.Parameters.AddWithValue("visible", way.Visible.Value);
+            cmd.Parameters.AddWithValue("timestamp", way.TimeStamp.Value);
+            cmd.Parameters.AddWithValue("version", way.Version.Value);
+            cmd.Parameters.AddWithValue("usr", way.UserName);
+            cmd.Parameters.AddWithValue("usr_id", way.UserId.Value);
 
-//        public OsmStreamSource Get()
-//        {
-//            throw new NotImplementedException();
-//        }
+            if (cmd.ExecuteNonQuery() == 0)
+            { // oeps, node did not exist, insert.
+                cmd = this.GetCommand(
+                    "INSERT INTO way (id,changeset_id,visible,timestamp,version,usr,usr_id) " +
+                    "VALUES(@id,@changeset_id,@visible,@timestamp,version,@usr,@usr_id)");
+                cmd.Parameters.AddWithValue("id", way.Id.Value);
+                cmd.Parameters.AddWithValue("changeset_id", way.ChangeSetId.Value);
+                cmd.Parameters.AddWithValue("visible", way.Visible.Value);
+                cmd.Parameters.AddWithValue("timestamp", way.TimeStamp.Value);
+                cmd.Parameters.AddWithValue("version", way.Version.Value);
+                cmd.Parameters.AddWithValue("usr", way.UserName);
+                cmd.Parameters.AddWithValue("usr_id", way.UserId.Value);
+            }
 
-//        public void AddOrUpdate(OsmGeo osmGeo)
-//        {
-//            throw new NotImplementedException();
-//        }
+            cmd = this.GetCommand(string.Empty);
+            var cmdText = new StringBuilder("INSERT into way_tags (way_id,key,value) VALUES ");
+            if (way.Tags != null)
+            {
+                cmd.Parameters.AddWithValue("way_id", way.Id.Value);
+                var t = 0;
+                foreach (var tag in way.Tags)
+                {
+                    cmdText.Append(string.Format("(@way_id, @key_id_{0}, @value_id_{0})", t));
+                    cmd.Parameters.AddWithValue(string.Format("key_id_{0}", t), tag.Key);
+                    cmd.Parameters.AddWithValue(string.Format("value_id_{0}", t), tag.Value);
+                    t++;
+                }
+                if (t > 0)
+                {
+                    cmd.CommandText = cmdText.ToInvariantString();
+                    cmd.ExecuteNonQuery();
+                }
+            }
 
-//        public void AddOrUpdate(IEnumerable<OsmGeo> osmGeos)
-//        {
-//            throw new NotImplementedException();
-//        }
+            cmd = this.GetCommand(string.Empty);
+            cmdText = new StringBuilder("INSERT into way_nodes (way_id,node_id,sequence_id) VALUES ");
+            if (way.Nodes != null)
+            {
+                cmd.Parameters.AddWithValue("way_id", way.Id.Value);
+                for (var n = 0; n < way.Nodes.Count; n++)
+                {
+                    cmdText.Append(string.Format("(@way_id, @node_id{0}, @sequence_id{0})", n));
+                    cmd.Parameters.AddWithValue(string.Format("node_id{0}", n), way.Nodes[n]);
+                    cmd.Parameters.AddWithValue(string.Format("sequence_id{0}", n), n);
+                }
+                if (way.Nodes.Count > 0)
+                {
+                    cmd.CommandText = cmdText.ToInvariantString();
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
 
-//        public OsmGeo Get(OsmGeoType type, long id)
-//        {
-//            throw new NotImplementedException();
-//        }
+        /// <summary>
+        /// Adds or updates a relation.
+        /// </summary>
+        private void AddOrUpdateRelation(Relation relation)
+        {
+            throw new NotImplementedException();
+        }
 
-//        public IList<OsmGeo> Get(IList<OsmGeoType> type, IList<long> id)
-//        {
-//            throw new NotImplementedException();
-//        }
+        /// <summary>
+        /// Gets the node with the given id.
+        /// </summary>
+        private Node GetNode(long id)
+        {
+            var command = this.GetCommand("SELECT id, latitude, longitude, changeset_id, visible, timestamp, tile, version, usr, usr_id FROM dbo.node WHERE id = @id");
+            command.Parameters.AddWithValue("id", id);
 
-//        public IList<OsmGeo> Get(float minLatitude, float minLongitude, float maxLatitude, float maxLongitude, Filter filter)
-//        {
-//            throw new NotImplementedException();
-//        }
+            Node node = null;
+            using (var reader = new DbDataReaderWrapper(command.ExecuteReader()))
+            {
+                if (reader.Read())
+                {
+                    node = reader.BuildNode();
+                }
+            }
+            if (node != null)
+            {
+                command = this.GetCommand("SELECT node_id, key, value FROM dbo.node_tags WHERE way_id = @id");
+                command.Parameters.AddWithValue("id", id);
 
-//        public bool Delete(OsmGeoType type, long id)
-//        {
-//            throw new NotImplementedException();
-//        }
+                using (var reader = new DbDataReaderWrapper(command.ExecuteReader()))
+                {
+                    if (reader.Read())
+                    {
+                        reader.AddTags(node);
+                    }
+                }
+            }
+            return node;
+        }
 
-//        public IList<bool> Delete(IList<OsmGeoType> type, IList<long> id)
-//        {
-//            throw new NotImplementedException();
-//        }
+        /// <summary>
+        /// Gets the way with the given id.
+        /// </summary>
+        private Way GetWay(long id)
+        {
+            var command = this.GetCommand("SELECT id, changeset_id, visible, timestamp, version, usr, usr_id FROM dbo.way WHERE id = @id");
+            command.Parameters.AddWithValue("id", id);
 
-//        public bool ApplyChangeset(ChangeSet changeset, bool atomic = false)
-//        {
-//            throw new NotImplementedException();
-//        }
+            Way way = null;
+            using (var reader = new DbDataReaderWrapper(command.ExecuteReader()))
+            {
+                if (reader.Read())
+                {
+                    way = reader.BuildWay();
+                }
+            }
+            if(way != null)
+            {
+                command = this.GetCommand("SELECT way_id, node_id, sequence_id FROM dbo.way_nodes WHERE way_id = @id ORDER BY sequence_id");
+                command.Parameters.AddWithValue("id", id);
 
-//        /// <summary>
-//        /// Returns all the nodes with the given ids.
-//        /// </summary>
-//        private IList<Node> GetNodes(IList<long> ids)
-//        {
-//            var returnList = new List<Node>();
-//            if (ids.Count > 0)
-//            {
-//                // initialize connection.
-//                var con = this.GetConnection();
+                using (var reader = new DbDataReaderWrapper(command.ExecuteReader()))
+                {
+                    if (reader.Read())
+                    {
+                        reader.AddNodes(way);
+                    }
+                }
 
-//                // STEP 1: query nodes table.
-//                //id	latitude	longitude	changeset_id	visible	timestamp	tile	version
+                command = this.GetCommand("SELECT way_id, key, value FROM dbo.way_tags WHERE way_id = @id");
+                command.Parameters.AddWithValue("id", id);
 
-//                var nodes = new Dictionary<long, Node>();
-//                for (int idx_1000 = 0; idx_1000 <= ids.Count / 1000; idx_1000++)
-//                {
-//                    int start_idx = idx_1000 * 1000;
-//                    int stop_idx = System.Math.Min((idx_1000 + 1) * 1000, ids.Count);
-//                    string sql
-//                        = "SELECT id, latitude, longitude, changeset_id, visible, timestamp, tile, version, usr, usr_id FROM node WHERE (id IN ({0})) ";
-//                    ;
-//                    string ids_string = this.ConstructIdList(ids, start_idx, stop_idx);
-//                    if (ids_string.Length > 0)
-//                    {
-//                        sql = string.Format(sql, ids_string);
+                using (var reader = new DbDataReaderWrapper(command.ExecuteReader()))
+                {
+                    if (reader.Read())
+                    {
+                        reader.AddTags(way);
+                    }
+                }
+            }
+            return way;
+        }
 
-//                        SqlCommand com = new SqlCommand(sql);
-//                        com.Connection = con;
-//                        SqlDataReader reader = com.ExecuteReader();
-//                        Node node = null;
-//                        List<long> node_ids = new List<long>();
-//                        while (reader.Read())
-//                        {
-//                            // load/parse data.
-//                            long returned_id = reader.GetInt64(0);
-//                            int latitude_int = reader.GetInt32(1);
-//                            int longitude_int = reader.GetInt32(2);
-//                            long? changeset_id = reader.IsDBNull(3) ? null : (long?)reader.GetInt64(3);
-//                            bool? visible = reader.IsDBNull(4) ? null : (bool?)reader.GetBoolean(4);
-//                            DateTime? timestamp = reader.IsDBNull(5) ? null : (DateTime?)reader.GetDateTime(5);
-//                            long tile = reader.GetInt64(6);
-//                            ulong? version = reader.IsDBNull(7) ? null : (ulong?)(ulong)reader.GetInt32(7);
-//                            string usr = reader.IsDBNull(8) ? null : reader.GetString(8);
-//                            long? usr_id = reader.IsDBNull(9) ? null : (long?)reader.GetInt32(9);
+        /// <summary>
+        /// Gets the relation with the given id.
+        /// </summary>
+        private Relation GetRelation(long id)
+        {
+            var command = this.GetCommand("SELECT id, changeset_id, visible, timestamp, version, usr, usr_id FROM dbo.relation WHERE id = @id");
+            command.Parameters.AddWithValue("id", id);
 
-//                            if (!nodes.ContainsKey(returned_id))
-//                            {
-//                                // create node.
-//                                node = new Node();
-//                                node.Id = returned_id;
-//                                node.Version = version;
-//                                node.UserId = usr_id;
-//                                node.TimeStamp = timestamp;
-//                                node.ChangeSetId = changeset_id;
-//                                node.Visible = visible;
-//                                node.Latitude = ((double)latitude_int) / 10000000.0;
-//                                node.Longitude = ((double)longitude_int) / 10000000.0;
-//                                node.UserName = usr;
+            Relation relation = null;
+            using (var reader = new DbDataReaderWrapper(command.ExecuteReader()))
+            {
+                if (reader.Read())
+                {
+                    relation = reader.BuildRelation();
+                }
+            }
+            if (relation != null)
+            {
+                command = this.GetCommand("SELECT relation_id, member_type, member_role, sequence_id FROM dbo.relation_members WHERE relation_id = @id ORDER BY sequence_id");
+                command.Parameters.AddWithValue("id", id);
 
-//                                nodes.Add(node.Id.Value, node);
-//                                node_ids.Add(node.Id.Value);
-//                            }
-//                        }
-//                        reader.Close();
-//                    }
-//                }
+                using (var reader = new DbDataReaderWrapper(command.ExecuteReader()))
+                {
+                    if (reader.Read())
+                    {
+                        reader.AddMembers(relation);
+                    }
+                }
 
-//                // STEP2: Load all node tags.
-//                this.LoadNodeTags(nodes);
+                command = this.GetCommand("SELECT way_id, key, value FROM dbo.relation_tags WHERE way_id = @id");
+                command.Parameters.AddWithValue("id", id);
 
-//                returnList = nodes.Values.ToList<Node>();
-//            }
-//            return returnList;
-//        }
-        
-//        /// <summary>
-//        /// Returns all data within the given bounding box and filtered by the given filter.
-//        /// </summary>
-//        private IList<OsmGeo> Get(GeoCoordinateBox box, Filter filter)
-//        {
-//            // initialize connection.
-//            var con = this.GetConnection();
-//            var res = new List<OsmGeo>();
-
-//            // calculate bounding box parameters to query db.
-//            var latitudeMin = (long)(box.MinLat * 10000000.0);
-//            var longitudeMin = (long)(box.MinLon * 10000000.0);
-//            var latitudeMax = (long)(box.MaxLat * 10000000.0);
-//            var longitudeMax = (long)(box.MaxLon * 10000000.0);
-
-//            var boxes = new List<long>();
-
-//            var tileRange = TileRange.CreateAroundBoundingBox(box, 14);
-//            foreach (var tile in tileRange)
-//            {
-//                boxes.Add((long)tile.Id);
-//            }
-
-//            // STEP 1: query nodes table.
-//            //id	latitude	longitude	changeset_id	visible	timestamp	tile	version
-//            //string sql
-//            //        = "SELECT node.id, node.latitude, node.longitude, node.changeset_id, node.timestamp, node.version, " +
-//            //          "node.usr, node.usr_id, node.visible FROM node WHERE  (tile IN ({4})) AND (visible = 1) AND (latitude BETWEEN {0} AND {1} AND longitude BETWEEN {2} AND {3})";
-//            // remove this nasty BETWEEN operation because it depends on the database (!) what results are returned (including or excluding bounds!!!)
-//            string sql
-//                = "SELECT id, latitude, longitude, changeset_id, visible, timestamp, tile, version, usr, usr_id " +
-//                  "FROM node WHERE  (tile IN ({4})) AND (visible = 1) AND (latitude >= {0} AND latitude < {1} AND longitude >= {2} AND longitude < {3})";
-//            sql = string.Format(sql,
-//                        latitudeMin.ToString(System.Globalization.CultureInfo.InvariantCulture),
-//                        latitudeMax.ToString(System.Globalization.CultureInfo.InvariantCulture),
-//                        longitudeMin.ToString(System.Globalization.CultureInfo.InvariantCulture),
-//                        longitudeMax.ToString(System.Globalization.CultureInfo.InvariantCulture),
-//                        this.ConstructIdList(boxes));
-
-//            // TODO: parameters.
-//            var com = new SqlCommand(sql);
-//            com.Connection = con;
-//            SqlDataReader reader = com.ExecuteReader();
-//            Node node = null;
-//            var nodes = new Dictionary<long, Node>();
-//            var nodeIds = new List<long>();
-//            while (reader.Read())
-//            {
-//                // load/parse data.
-//                long returned_id = reader.GetInt64(0);
-//                int latitude_int = reader.GetInt32(1);
-//                int longitude_int = reader.GetInt32(2);
-//                long? changeset_id = reader.IsDBNull(3) ? null : (long?)reader.GetInt64(3);
-//                bool? visible = reader.IsDBNull(4) ? null : (bool?)(reader.GetValue(4));
-//                DateTime? timestamp = reader.IsDBNull(5) ? null : (DateTime?)reader.GetDateTime(5);
-//                long tile = reader.GetInt64(6);
-//                ulong? version = reader.IsDBNull(7) ? null : (ulong?)(ulong)reader.GetInt32(7);
-//                string usr = reader.IsDBNull(8) ? null : reader.GetString(8);
-//                long? usr_id = reader.IsDBNull(9) ? null : (long?)reader.GetInt32(9);
-
-//                if (!nodes.ContainsKey(returned_id))
-//                {
-//                    // create node.
-//                    node = new Node();
-//                    node.Id = returned_id;
-//                    node.Version = version;
-//                    node.UserId = usr_id;
-//                    node.TimeStamp = timestamp;
-//                    node.ChangeSetId = changeset_id;
-//                    node.Visible = visible;
-//                    node.Latitude = ((double)latitude_int) / 10000000.0;
-//                    node.Longitude = ((double)longitude_int) / 10000000.0;
-//                    node.UserName = usr;
-
-//                    nodeIds.Add(node.Id.Value);
-//                    nodes.Add(node.Id.Value, node);
-//                }
-//            }
-//            reader.Close();
-
-//            // STEP2: Load all node tags.
-//            this.LoadNodeTags(nodes);
-//            res.AddRange(nodes.Values);
-
-//            // load all ways that contain the nodes that have been found.
-//            res.AddRange(this.GetWaysFor(nodeIds));
-
-//            // get relations containing any of the nodes or ways in the current results-list.
-//            List<Relation> relations = new List<Relation>();
-//            HashSet<long> relationIds = new HashSet<long>();
-//            foreach (OsmGeo osmGeo in res)
-//            {
-//                IList<Relation> relationsFor = this.GetRelationsFor(osmGeo);
-//                foreach (Relation relation in relationsFor)
-//                {
-//                    if (!relationIds.Contains(relation.Id.Value))
-//                    {
-//                        relations.Add(relation);
-//                        relationIds.Add(relation.Id.Value);
-//                    }
-//                }
-//            }
-
-//            // recursively add all relations containing other relations as a member.
-//            do
-//            {
-//                res.AddRange(relations); // add previous relations-list.
-//                List<Relation> newRelations = new List<Relation>();
-//                foreach (OsmGeo osmGeo in relations)
-//                {
-//                    IList<Relation> relationsFor = this.GetRelationsFor(osmGeo);
-//                    foreach (Relation relation in relationsFor)
-//                    {
-//                        if (!relationIds.Contains(relation.Id.Value))
-//                        {
-//                            newRelations.Add(relation);
-//                            relationIds.Add(relation.Id.Value);
-//                        }
-//                    }
-//                }
-//                relations = newRelations;
-//            } while (relations.Count > 0);
-
-//            if (filter != null)
-//            {
-//                var filtered = new List<OsmGeo>();
-//                foreach (OsmGeo geo in res)
-//                {
-//                    if (filter.Evaluate(geo))
-//                    {
-//                        filtered.Add(geo);
-//                    }
-//                }
-//                return filtered;
-//            }
-
-//            return res;
-//        }
-//    }
-//}
+                using (var reader = new DbDataReaderWrapper(command.ExecuteReader()))
+                {
+                    if (reader.Read())
+                    {
+                        reader.AddTags(relation);
+                    }
+                }
+            }
+            return relation;
+        }
+    }
+}

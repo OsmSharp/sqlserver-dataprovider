@@ -17,6 +17,9 @@
 // along with OsmSharp. If not, see <http://www.gnu.org/licenses/>.
 
 using OsmSharp.Data.SQLServer.Osm.SchemaTools;
+using OsmSharp.Data.SQLServer.Test.Functional.Properties;
+using System;
+using System.Data.SqlClient;
 
 namespace OsmSharp.Data.SQLServer.Test.Functional
 {
@@ -32,8 +35,24 @@ namespace OsmSharp.Data.SQLServer.Test.Functional
             Staging.Download.DownloadAll();
 
             // try importing into db.
+            using (var connection = new System.Data.SqlClient.SqlConnection(
+                Settings.Default.ConnectionString))
+            {
+                connection.Open();
+                SchemaTools.HistoryDbDropSchema(connection);
+                SchemaTools.SnapshotDbDropSchema(connection);
+            }
             //Tests.ImportRunner.TestImportSnapshotDbBelgium();
             Tests.ImportRunner.TestImportHistoryDbBelgium();
+
+            var source = new OsmSharp.Data.SQLServer.Osm.Streams.HistoryDbStreamSource(
+                Settings.Default.ConnectionString);
+            var progress = new OsmSharp.Osm.Streams.Filters.OsmStreamFilterProgress();
+            progress.RegisterSource(source);
+            foreach (var data in progress)
+            {
+                //Console.WriteLine(data);
+            }
         }
     }
 }

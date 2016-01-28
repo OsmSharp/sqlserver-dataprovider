@@ -38,7 +38,7 @@ namespace OsmSharp.Data.SQLServer.Test.Functional.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("Server=DESKTOP-K3IOMIF\\SQLEXPRESS;Database=osmsharp;User Id=osmsharp;Password=osm" +
-            "sharp;")]
+            "sharp;MultipleActiveResultSets=true;")]
         public string ConnectionString {
             get {
                 return ((string)(this["ConnectionString"]));

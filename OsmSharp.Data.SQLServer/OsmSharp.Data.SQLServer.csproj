@@ -135,8 +135,12 @@
       <Link>Properties\SharedAssemblyVersion.cs</Link>
     </Compile>
     <Compile Include="Extensions.cs" />
+    <Compile Include="Osm\DbDataReaderWrapper.cs" />
     <Compile Include="Osm\SchemaTools\SchemaConstants.cs" />
+    <Compile Include="Osm\SqlExtensions.cs" />
     <Compile Include="Osm\Streams\HistoryDbStreamTarget.cs" />
+    <Compile Include="Osm\Streams\HistoryDbStreamSource.cs" />
+    <Compile Include="Osm\Streams\SnapshotDbStreamSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Osm\SchemaTools\SchemaTools.cs" />
     <Compile Include="Osm\Streams\SnapshotDbStreamTarget.cs" />

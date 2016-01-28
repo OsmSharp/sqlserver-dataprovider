@@ -51,7 +51,7 @@ namespace OsmSharp.Data.SQLServer.Osm.SchemaTools
             OsmSharp.Logging.Log.TraceEvent("OsmSharp.Data.SQLServer.Osm.SchemaTools.SQLServerSchemaTools", 
                 OsmSharp.Logging.TraceEventType.Information,
                     "Creating snapshot database schema...");
-            ExecuteSQL(connection, "SnapshopDbSchemaDDL.sql");
+            ExecuteSQL(connection, "SnapshotDbSchemaDDL.sql");
         }
         /// <summary>
         /// Creates/detects the history db schema.

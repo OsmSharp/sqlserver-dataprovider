@@ -6,7 +6,7 @@
       <Value Profile="(Default)">ftp://build.osmsharp.com/data/OSM/planet/europe/belgium-latest.osm.pbf</Value>
     </Setting>
     <Setting Name="ConnectionString" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Server=DESKTOP-K3IOMIF\SQLEXPRESS;Database=osmsharp;User Id=osmsharp;Password=osmsharp;</Value>
+      <Value Profile="(Default)">Server=DESKTOP-K3IOMIF\SQLEXPRESS;Database=osmsharp;User Id=osmsharp;Password=osmsharp;MultipleActiveResultSets=true;</Value>
     </Setting>
   </Settings>
 </SettingsFile>
