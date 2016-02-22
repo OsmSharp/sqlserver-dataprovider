@@ -15,11 +15,11 @@
     <copyright>Ben Abelshausen</copyright>
     <tags>osm, openstreetmap, sqlserver</tags>
     <dependencies>
-      <dependency id="OsmSharp.Core" version="0.0.0" />
+		<dependency id="OsmSharp.Core" version="[2,3)" />
     </dependencies>
   </metadata>
   <files>
-    <file src="Output\OsmSharp.Data.SQLServer.dll" target="lib\net40\OsmSharp.Data.SQLServer.dll" />
-    <file src="Output\OsmSharp.Data.SQLServer.dll" target="lib\net45\OsmSharp.Data.SQLServer.dll" />
+    <file src="Output\OsmSharp.Db.SQLServer.dll" target="lib\net40\OsmSharp.Db.SQLServer.dll" />
+    <file src="Output\OsmSharp.Db.SQLServer.dll" target="lib\net45\OsmSharp.Db.SQLServer.dll" />
   </files>
 </package>
