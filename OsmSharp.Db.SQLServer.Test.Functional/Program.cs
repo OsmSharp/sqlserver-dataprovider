@@ -41,15 +41,15 @@ namespace OsmSharp.Data.SQLServer.Test.Functional
             Staging.Download.DownloadAll();
 
             // try importing into db.
-            //using (var connection = new System.Data.SqlClient.SqlConnection(
-            //    Settings.Default.ConnectionString))
-            //{
-            //    connection.Open();
-            //    Db.SQLServer.Schema.Tools.HistoryDbDropSchema(connection);
-            //    Db.SQLServer.Schema.Tools.SnapshotDbDropSchema(connection);
-            //}
+            using (var connection = new System.Data.SqlClient.SqlConnection(
+                Settings.Default.ConnectionString))
+            {
+                connection.Open();
+                Db.SQLServer.Schema.Tools.HistoryDbDropSchema(connection);
+                Db.SQLServer.Schema.Tools.SnapshotDbDropSchema(connection);
+            }
             //Tests.ImportRunner.TestImportSnapshotDbBelgium();
-            //Tests.ImportRunner.TestImportHistoryDbBelgium();
+            Tests.ImportRunner.TestImportHistoryDbBelgium();
 
             var source = new HistoryDbStreamSource(
                 Settings.Default.ConnectionString);

@@ -16,6 +16,8 @@ if object_id('dbo.node', 'U') is null
 	PRIMARY KEY CLUSTERED (id, [version])
   ); 
 
+CREATE INDEX IDX_NODE_TILE ON dbo.node(tile ASC);
+
 if object_id('dbo.node_tags', 'U') is null
   CREATE TABLE dbo.node_tags
   (
@@ -61,6 +63,7 @@ if object_id('dbo.way_nodes', 'U') is null
 	PRIMARY KEY CLUSTERED (way_id, [way_version], sequence_id)
   ); 
   
+CREATE INDEX IDX_WAY_NODES_NODE ON dbo.way_nodes(node_id  ASC);
 CREATE INDEX IDX_WAY_NODES_WAY ON dbo.way_nodes(way_id, [way_version]  ASC);
 CREATE INDEX IDX_WAY_NODES_WAY_SEQ ON dbo.way_nodes(way_id, [way_version], sequence_id ASC);
 
@@ -101,6 +104,7 @@ if object_id('dbo.relation_members', 'U') is null
   );
   
 CREATE INDEX IDX_REL_MEM_REL ON dbo.relation_members(relation_id, [relation_version]  ASC);
+CREATE INDEX IDX_REL_MEM_MEM_TYPE ON dbo.relation_members(member_id, member_type  ASC);
 CREATE INDEX IDX_REL_MEM_REL_SEQ ON dbo.relation_members(relation_id, [relation_version], sequence_id ASC);
 
 if object_id('dbo.changeset', 'U') is null

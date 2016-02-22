@@ -148,7 +148,7 @@ namespace OsmSharp.Db.SQLServer
             var extraNodeIds = new List<long>();
             var wayIds = new HashSet<long>();
             command = this.GetCommand(string.Format(
-                "select distinct * from way left outer join way_nodes on way.id = way_nodes.way_id where way_id in (select distinct way_id from way join way_nodes on way.id = way_nodes.way_id where node_id in ({0})) order by id, sequence_id", nodeIds.BuildCommaSeperated()));
+                "select distinct * from way left outer join way_nodes on way.id = way_nodes.way_id where id in (select distinct way_id from way_nodes where node_id in ({0})) order by id, sequence_id", nodeIds.BuildCommaSeperated()));
             reader = command.ExecuteReaderWrapper();
             var ways = new List<Way>();
             if (reader.Read())
@@ -198,22 +198,51 @@ namespace OsmSharp.Db.SQLServer
                 if (nodeIds.Count > 0 && wayIds.Count > 0)
                 {
                     command = this.GetCommand(string.Format(
-                        "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (select distinct relation_id from relation_members where (member_id in ({0}) and member_type = 0) or (member_id in ({1}) or member_type = 1)) order by id, sequence_id",
-                    nodeIds.BuildCommaSeperated(), wayIds.BuildCommaSeperated()));
+                        "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (" +
+                        "(" +
+                            "( select relation_id " +
+                            "from relation_members " +
+                            "join ( values {0}) " +
+                            "V (way_id) on v.way_id = [relation_members].member_id " +
+                            "where relation_members.member_type = 0) " +
+                            "union " +
+                            "(select relation_id " +
+                            "from relation_members " +
+                            "join ( values {1}) " +
+                            "V (way_id) on v.way_id = [relation_members].member_id " +
+                            "where relation_members.member_type = 1) " +
+                            ")" +
+                    ") and relation.visible=1 order by id, sequence_id",
+                    nodeIds.BuildCommaSeperatedWithRoundBrackets(), wayIds.BuildCommaSeperatedWithRoundBrackets()));
                     reader = command.ExecuteReaderWrapper();
                 }
                 else if(nodeIds.Count > 0)
                 {
                     command = this.GetCommand(string.Format(
-                        "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (select distinct relation_id from relation_members where (member_id in ({0}) and member_type = 0)) order by id, sequence_id",
-                    nodeIds.BuildCommaSeperated(), wayIds.BuildCommaSeperated()));
+                        "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (" +
+                        "" +
+                            "( select relation_id " +
+                            "from relation_members " +
+                            "join ( values {0}) " +
+                            "V (way_id) on v.way_id = [relation_members].member_id " +
+                            "where relation_members.member_type = 0) " +
+                    ") and relation.visible=1 order by id, sequence_id",
+                    nodeIds.BuildCommaSeperatedWithRoundBrackets()));
                     reader = command.ExecuteReaderWrapper();
                 }
                 else
                 {
                     command = this.GetCommand(string.Format(
-                        "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (select distinct relation_id from relation_members where (member_id in ({0}) and member_type = 1)) order by id, sequence_id",
-                    nodeIds.BuildCommaSeperated(), wayIds.BuildCommaSeperated()));
+                        "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (" +
+                        "" +
+                            "(select relation_id " +
+                            "from relation_members " +
+                            "join ( values {0}) " +
+                            "V (way_id) on v.way_id = [relation_members].member_id " +
+                            "where relation_members.member_type = 1) " +
+                            ")" +
+                    ") and relation.visible=1 order by id, sequence_id",
+                    wayIds.BuildCommaSeperatedWithRoundBrackets()));
                     reader = command.ExecuteReaderWrapper();
                 }
                 if (reader.Read())
@@ -422,7 +451,7 @@ namespace OsmSharp.Db.SQLServer
             switch (type)
             {
                 case OsmGeoType.Node:
-                    return this.GetNode(id);
+                    return this.GetNodes(new List<long>(new long[] { id }))[0];
                 case OsmGeoType.Way:
                     return this.GetWay(id);
                 case OsmGeoType.Relation:
@@ -454,6 +483,11 @@ namespace OsmSharp.Db.SQLServer
         public IList<OsmGeo> Get(OsmGeoType type, IList<long> id)
         {
             if (id == null) { throw new ArgumentNullException("id"); }
+
+            if (type == OsmGeoType.Node)
+            {
+                return new List<OsmGeo>(this.GetNodes(id));
+            }
 
             var result = new List<OsmGeo>();
             for (int i = 0; i < id.Count; i++)
@@ -764,18 +798,48 @@ namespace OsmSharp.Db.SQLServer
         }
 
         /// <summary>
-        /// Gets the latest visible version of the node with the given id.
+        /// Gets the visible versions of the nodes with the given id.
         /// </summary>
-        private Node GetNode(long id)
+        private IList<Node> GetNodes(IList<long> ids)
         {
-            var command = this.GetCommand("SELECT max(version) FROM node WHERE id = @id and visible=1");
-            command.Parameters.AddWithValue("id", id);
-            var version = command.ExecuteScalarLong(0);
-            if (version == 0)
-            { // no data found.
-                return null;
+            var nodes = new List<Node>(ids.Count);
+            if (ids.Count == 0)
+            {
+                return nodes;
             }
-            return this.GetNode(id, (int)version);
+
+            var command = this.GetCommand(string.Format("select expected_node_id, node.*, node_tags.* from ( values {0}) V (expected_node_id) " +
+                    "join node " +
+                    "on node.id = V.expected_node_id " +
+                    "left outer join node_tags " +
+                    "on node.id = node_tags.node_id ", ids.BuildCommaSeperatedWithRoundBrackets()));
+
+            var nodesDictionary = new Dictionary<long, Node>();
+            using (var reader = command.ExecuteReaderWrapper())
+            {
+                if (reader.Read())
+                {
+                    while (reader.HasActiveRow)
+                    {
+                        var node = reader.BuildNode();
+                        nodesDictionary[node.Id.Value] = node;
+                    }
+                }
+            }
+
+            for(var i = 0; i < ids.Count; i++)
+            {
+                Node node;
+                if (nodesDictionary.TryGetValue(ids[i], out node))
+                {
+                    nodes.Add(node);
+                }
+                else
+                {
+                    nodes.Add(null);
+                }
+            }
+            return nodes;
         }
 
         /// <summary>

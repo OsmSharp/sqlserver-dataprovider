@@ -406,6 +406,27 @@ namespace OsmSharp.Db.SQLServer
         }
 
         /// <summary>
+        /// Constructs an id list for SQL for only the specified section of ids.
+        /// </summary>
+        public static string BuildCommaSeperatedWithRoundBrackets<T>(this IEnumerable<T> values)
+        {
+            var stringBuilder = new System.Text.StringBuilder();
+            var isFirst = true;
+            foreach (var value in values)
+            {
+                if (!isFirst)
+                {
+                    stringBuilder.Append(',');
+                }
+                stringBuilder.Append('(');
+                stringBuilder.Append(value.ToInvariantString());
+                stringBuilder.Append(')');
+                isFirst = false;
+            }
+            return stringBuilder.ToString();
+        }
+
+        /// <summary>
         /// Converts a standard DateTime into the number of milliseconds since 1/1/1970.
         /// </summary>
         public static object ToUnixTimeDB(this DateTime? date)
