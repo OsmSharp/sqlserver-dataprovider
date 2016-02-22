@@ -4,8 +4,8 @@ if object_id('dbo.node', 'U') is null
   CREATE TABLE dbo.node
   (
     id            bigint   not null,
-    latitude      integer  not null,
-    longitude     integer  not null,
+    latitude      bigint  not null,
+    longitude     bigint  not null,
     changeset_id  bigint   not null,
     visible       bit      not null,
     [timestamp]   bigint not null,
@@ -25,7 +25,7 @@ if object_id('dbo.node_tags', 'U') is null
     value   varchar(500) null
   );
 
-CREATE INDEX IDX_NODE_TAGS_NODE ON dbo.node_tags(node_id, [version] ASC);
+CREATE INDEX IDX_NODE_TAGS_NODE ON dbo.node_tags(node_id, [node_version] ASC);
 
 if object_id('dbo.way', 'U') is null
   CREATE TABLE dbo.way 
@@ -49,7 +49,7 @@ if object_id('dbo.way_tags', 'U') is null
     value  varchar(500) null
   ); 
 
-CREATE INDEX IDX_WAY_TAGS_WAY ON dbo.way_tags(way_id, [version] ASC);
+CREATE INDEX IDX_WAY_TAGS_WAY ON dbo.way_tags(way_id, [way_version] ASC);
 
 if object_id('dbo.way_nodes', 'U') is null
   CREATE TABLE dbo.way_nodes 
@@ -58,11 +58,11 @@ if object_id('dbo.way_nodes', 'U') is null
 	[way_version]   integer not null,
     node_id     bigint  not null,
     sequence_id integer not null,
-	PRIMARY KEY CLUSTERED (way_id, [version], sequence_id)
+	PRIMARY KEY CLUSTERED (way_id, [way_version], sequence_id)
   ); 
   
-CREATE INDEX IDX_WAY_NODES_WAY ON dbo.way_nodes(way_id, [version]  ASC);
-CREATE INDEX IDX_WAY_NODES_WAY_SEQ ON dbo.way_nodes(way_id, [version], sequence_id ASC);
+CREATE INDEX IDX_WAY_NODES_WAY ON dbo.way_nodes(way_id, [way_version]  ASC);
+CREATE INDEX IDX_WAY_NODES_WAY_SEQ ON dbo.way_nodes(way_id, [way_version], sequence_id ASC);
 
 if object_id('dbo.relation', 'U') is null
   CREATE TABLE dbo.relation 
@@ -87,7 +87,7 @@ if object_id('dbo.relation_tags', 'U') is null
     value       varchar(500) null
   ); 
 
-CREATE INDEX IDX_REL_TAGS_REL ON dbo.relation_tags(relation_id, [version]  ASC);
+CREATE INDEX IDX_REL_TAGS_REL ON dbo.relation_tags(relation_id, [relation_version]  ASC);
 
 if object_id('dbo.relation_members', 'U') is null
   CREATE TABLE dbo.relation_members 
@@ -100,20 +100,20 @@ if object_id('dbo.relation_members', 'U') is null
     sequence_id integer      not null
   );
   
-CREATE INDEX IDX_REL_MEM_REL ON dbo.relation_members(relation_id, [version]  ASC);
-CREATE INDEX IDX_REL_MEM_REL_SEQ ON dbo.relation_members(relation_id, [version], sequence_id ASC);
+CREATE INDEX IDX_REL_MEM_REL ON dbo.relation_members(relation_id, [relation_version]  ASC);
+CREATE INDEX IDX_REL_MEM_REL_SEQ ON dbo.relation_members(relation_id, [relation_version], sequence_id ASC);
 
-if object_id('dbo.changesets', 'U') is null
-  CREATE TABLE dbo.changesets 
+if object_id('dbo.changeset', 'U') is null
+  CREATE TABLE dbo.changeset
   (
     id			bigint       not null,
 	[usr_id]	integer		 not null,	
-    created_at  bigint     not null,
+    created_at  bigint       not null,
     min_lat     integer      not null,
     max_lat     integer      not null,
     min_lon     integer      not null,
     max_lon     integer      not null,
-    closed_at   datetime      not null,
+    closed_at   bigint       null,
 	PRIMARY KEY CLUSTERED (id)
   );
 
@@ -123,4 +123,14 @@ if object_id('dbo.changeset_tags', 'U') is null
     changeset_id bigint       not null,
     [key]        varchar(100) not null,
     value        varchar(500) null
+  );
+
+if object_id('dbo.changeset_changes', 'U') is null
+  CREATE TABLE dbo.changeset_changes 
+  (
+	[changeset_id] integer NOT NULL,
+	[type] integer NOT NULL,
+	[osm_id] bigint NOT NULL,
+	[osm_type] integer NOT NULL,
+	[osm_version] integer NOT NULL
   );

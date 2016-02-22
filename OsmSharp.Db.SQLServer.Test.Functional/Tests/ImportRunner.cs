@@ -1,22 +1,30 @@
-﻿// OsmSharp - OpenStreetMap (OSM) SDK
-// Copyright (C) 2016 Abelshausen Ben
-// 
-// This file is part of OsmSharp.
-// 
-// OsmSharp is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 2 of the License, or
-// (at your option) any later version.
-// 
-// OsmSharp is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with OsmSharp. If not, see <http://www.gnu.org/licenses/>.
+﻿// The MIT License (MIT)
+
+// Copyright (c) 2016 Ben Abelshausen
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 
 using OsmSharp.Data.SQLServer.Test.Functional.Properties;
+using OsmSharp.Db.SQLServer.Schema;
+using OsmSharp.Db.SQLServer.Streams;
+using OsmSharp.Streams;
+using OsmSharp.Streams.Filters;
 using System.IO;
 
 namespace OsmSharp.Data.SQLServer.Test.Functional.Tests
@@ -36,14 +44,14 @@ namespace OsmSharp.Data.SQLServer.Test.Functional.Tests
             {
                 connection.Open();
 
-                Osm.SchemaTools.SchemaTools.SnapshotDbCreateAndDetect(connection);
-                Osm.SchemaTools.SchemaTools.SnapshotDbDeleteAllData(connection);
+                Tools.SnapshotDbCreateAndDetect(connection);
+                Tools.SnapshotDbDeleteAll(connection);
                 using (var stream = File.OpenRead("belgium-latest.osm.pbf"))
                 {
-                    var source = new OsmSharp.Osm.PBF.Streams.PBFOsmStreamSource(stream);
-                    var progress = new OsmSharp.Osm.Streams.Filters.OsmStreamFilterProgress();
+                    var source = new PBFOsmStreamSource(stream);
+                    var progress = new OsmStreamFilterProgress();
                     progress.RegisterSource(source);
-                    var target = new OsmSharp.Data.SQLServer.Osm.Streams.SnapshotDbStreamTarget(
+                    var target = new SnapshotDbStreamTarget(
                         Settings.Default.ConnectionString, true);
                     target.RegisterSource(progress);
                     target.Pull();
@@ -61,14 +69,14 @@ namespace OsmSharp.Data.SQLServer.Test.Functional.Tests
             {
                 connection.Open();
 
-                Osm.SchemaTools.SchemaTools.HistoryDbCreateAndDetect(connection);
-                Osm.SchemaTools.SchemaTools.HistoryDbDeleteAllData(connection);
+                Tools.HistoryDbCreateAndDetect(connection);
+                Tools.HistoryDbDeleteAll(connection);
                 using (var stream = File.OpenRead("belgium-latest.osm.pbf"))
                 {
-                    var source = new OsmSharp.Osm.PBF.Streams.PBFOsmStreamSource(stream);
-                    var progress = new OsmSharp.Osm.Streams.Filters.OsmStreamFilterProgress();
+                    var source = new PBFOsmStreamSource(stream);
+                    var progress = new OsmStreamFilterProgress();
                     progress.RegisterSource(source);
-                    var target = new OsmSharp.Data.SQLServer.Osm.Streams.HistoryDbStreamTarget(
+                    var target = new HistoryDbStreamTarget(
                         Settings.Default.ConnectionString, true);
                     target.RegisterSource(progress);
                     target.Pull();

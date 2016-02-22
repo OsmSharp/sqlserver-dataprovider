@@ -1,22 +1,24 @@
-﻿// OsmSharp - OpenStreetMap (OSM) SDK
-//
-// Copyright (C) 2016 Abelshausen Ben
-//                    Alexander Sinitsyn
-// 
-// This file is part of OsmSharp.
-// 
-// OsmSharp is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 2 of the License, or
-// (at your option) any later version.
-// 
-// OsmSharp is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-// 
-// You should have received a copy of the GNU General Public License
-// along with OsmSharp. If not, see <http://www.gnu.org/licenses/>.
+﻿// The MIT License (MIT)
+
+// Copyright (c) 2016 Ben Abelshausen
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
 
 using System;
 using System.Data;
@@ -121,11 +123,11 @@ namespace OsmSharp.Db.SQLServer.Streams
             _nodeTable = new DataTable();
             _nodeTable.BeginLoadData();
             _nodeTable.Columns.Add(new DataColumn("id", typeof (long)));
-            _nodeTable.Columns.Add(new DataColumn("latitude", typeof(int)));
-            _nodeTable.Columns.Add(new DataColumn("longitude", typeof(int)));
+            _nodeTable.Columns.Add(new DataColumn("latitude", typeof(long)));
+            _nodeTable.Columns.Add(new DataColumn("longitude", typeof(long)));
             _nodeTable.Columns.Add(new DataColumn("changeset_id", typeof(long)));
             _nodeTable.Columns.Add(new DataColumn("visible", typeof(bool)));
-            _nodeTable.Columns.Add(new DataColumn("timestamp", typeof(DateTime)));
+            _nodeTable.Columns.Add(new DataColumn("timestamp", typeof(long)));
             _nodeTable.Columns.Add(new DataColumn("tile", typeof(long)));
             _nodeTable.Columns.Add(new DataColumn("version", typeof(int)));
             _nodeTable.Columns.Add(new DataColumn("usr", typeof(string)));
@@ -146,7 +148,7 @@ namespace OsmSharp.Db.SQLServer.Streams
             _wayTable.BeginLoadData();
             _wayTable.Columns.Add(new DataColumn("id", typeof (long)));
             _wayTable.Columns.Add(new DataColumn("changeset_id", typeof(long)));
-            _wayTable.Columns.Add(new DataColumn("timestamp", typeof(DateTime)));
+            _wayTable.Columns.Add(new DataColumn("timestamp", typeof(long)));
             _wayTable.Columns.Add(new DataColumn("visible", typeof(bool)));
             _wayTable.Columns.Add(new DataColumn("version", typeof(int)));
             _wayTable.Columns.Add(new DataColumn("usr", typeof(string)));
@@ -174,7 +176,7 @@ namespace OsmSharp.Db.SQLServer.Streams
             _relationTable.BeginLoadData();
             _relationTable.Columns.Add(new DataColumn("id", typeof (long)));
             _relationTable.Columns.Add(new DataColumn("changeset_id", typeof(long)));
-            _relationTable.Columns.Add(new DataColumn("timestamp", typeof(DateTime)));
+            _relationTable.Columns.Add(new DataColumn("timestamp", typeof(long)));
             _relationTable.Columns.Add(new DataColumn("visible", typeof(bool)));
             _relationTable.Columns.Add(new DataColumn("version", typeof(int)));
             _relationTable.Columns.Add(new DataColumn("usr", typeof(string)));
@@ -252,7 +254,7 @@ namespace OsmSharp.Db.SQLServer.Streams
             nodeRow["longitude"] = longitude;
             nodeRow["changeset_id"] = node.ChangeSetId.ConvertToDBValue();
             nodeRow["visible"] = node.Visible.HasValue ? (object)(node.Visible.Value ? 1 : 0) : DBNull.Value;
-            nodeRow["timestamp"] = node.TimeStamp.ConvertToDBValue();
+            nodeRow["timestamp"] = node.TimeStamp.ToUnixTimeDB();
             nodeRow["version"] = node.Version.ConvertToDBValue();
             nodeRow["tile"] = Tile.CreateAroundLocation(node.Latitude.Value, node.Longitude.Value, Constants.DefaultZoom).Id;
             nodeRow["usr"] = node.UserName == null ? DBNull.Value : (object)node.UserName.Truncate(SchemaConstants.RelationUsr);
@@ -294,7 +296,7 @@ namespace OsmSharp.Db.SQLServer.Streams
             wayRow["id"] = way.Id.Value;
             wayRow["changeset_id"] = way.ChangeSetId.ConvertToDBValue();
             wayRow["visible"] = way.Visible.HasValue ? (object)(way.Visible.Value ? 1 : 0) : DBNull.Value;
-            wayRow["timestamp"] = way.TimeStamp.ConvertToDBValue();
+            wayRow["timestamp"] = way.TimeStamp.ToUnixTimeDB();
             wayRow["version"] = way.Version.ConvertToDBValue();
             wayRow["usr"] = way.UserName == null ? DBNull.Value : (object)way.UserName.Truncate(SchemaConstants.RelationUsr);
             wayRow["usr_id"] = way.UserId.ConvertToDBValue();
@@ -362,7 +364,7 @@ namespace OsmSharp.Db.SQLServer.Streams
             relationRow["id"] = relation.Id.Value;
             relationRow["changeset_id"] = relation.ChangeSetId.ConvertToDBValue();
             relationRow["visible"] = relation.Visible.HasValue ? (object)(relation.Visible.Value ? 1 : 0) : DBNull.Value;
-            relationRow["timestamp"] = relation.TimeStamp.ConvertToDBValue();
+            relationRow["timestamp"] = relation.TimeStamp.ToUnixTimeDB();
             relationRow["version"] = relation.Version.ConvertToDBValue();
             relationRow["usr"] = relation.UserName == null ? DBNull.Value : (object)relation.UserName.Truncate(SchemaConstants.RelationUsr);
             relationRow["usr_id"] = relation.UserId.ConvertToDBValue();

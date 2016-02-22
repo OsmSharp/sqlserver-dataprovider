@@ -174,47 +174,73 @@ namespace OsmSharp.Db.SQLServer
             }
 
             // get way tags.
-            command = this.GetCommand(string.Format(
-                "select * from way_tags where way_id in ({0}) order by way_id", wayIds.BuildCommaSeperated()));
-            reader = command.ExecuteReaderWrapper();
-            if (reader.Read())
+            if (wayIds.Count > 0)
             {
-                var wayEnumerator = ways.GetEnumerator();
-                while (reader.HasActiveRow &&
-                    wayEnumerator.MoveNext())
+                command = this.GetCommand(string.Format(
+                    "select * from way_tags where way_id in ({0}) order by way_id", wayIds.BuildCommaSeperated()));
+                reader = command.ExecuteReaderWrapper();
+                if (reader.Read())
                 {
-                    reader.AddTags(wayEnumerator.Current);
+                    var wayEnumerator = ways.GetEnumerator();
+                    while (reader.HasActiveRow &&
+                        wayEnumerator.MoveNext())
+                    {
+                        reader.AddTags(wayEnumerator.Current);
+                    }
                 }
             }
 
             // get relations.
-            command = this.GetCommand(string.Format(
-                "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (select distinct relation_id from relation_members where (member_id in ({0}) and member_type = 0) or (member_id in ({1}) or member_type = 1)) order by id, sequence_id",
-                    nodeIds.BuildCommaSeperated(), wayIds.BuildCommaSeperated()));
-            reader = command.ExecuteReaderWrapper();
-            var relations = new List<Relation>();
             var relationIds = new List<long>();
-            if (reader.Read())
+            var relations = new List<Relation>();
+            if (nodeIds.Count > 0 || wayIds.Count > 0)
             {
-                while (reader.HasActiveRow)
+                if (nodeIds.Count > 0 && wayIds.Count > 0)
                 {
-                    var relation = reader.BuildRelation();
-                    relations.Add(relation);
-                    relationIds.Add(relation.Id.Value);
+                    command = this.GetCommand(string.Format(
+                        "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (select distinct relation_id from relation_members where (member_id in ({0}) and member_type = 0) or (member_id in ({1}) or member_type = 1)) order by id, sequence_id",
+                    nodeIds.BuildCommaSeperated(), wayIds.BuildCommaSeperated()));
+                    reader = command.ExecuteReaderWrapper();
+                }
+                else if(nodeIds.Count > 0)
+                {
+                    command = this.GetCommand(string.Format(
+                        "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (select distinct relation_id from relation_members where (member_id in ({0}) and member_type = 0)) order by id, sequence_id",
+                    nodeIds.BuildCommaSeperated(), wayIds.BuildCommaSeperated()));
+                    reader = command.ExecuteReaderWrapper();
+                }
+                else
+                {
+                    command = this.GetCommand(string.Format(
+                        "select * from relation left outer join relation_members on relation.id = relation_members.relation_id where id in (select distinct relation_id from relation_members where (member_id in ({0}) and member_type = 1)) order by id, sequence_id",
+                    nodeIds.BuildCommaSeperated(), wayIds.BuildCommaSeperated()));
+                    reader = command.ExecuteReaderWrapper();
+                }
+                if (reader.Read())
+                {
+                    while (reader.HasActiveRow)
+                    {
+                        var relation = reader.BuildRelation();
+                        relations.Add(relation);
+                        relationIds.Add(relation.Id.Value);
+                    }
                 }
             }
 
             // get relation tags.
-            command = this.GetCommand(string.Format(
-                "select * from relation_tags where relation_id in ({0}) order by relation_id", relationIds.BuildCommaSeperated()));
-            reader = command.ExecuteReaderWrapper();
-            if (reader.Read())
+            if (relationIds.Count > 0)
             {
-                var relationEnumerator = relations.GetEnumerator();
-                while (reader.HasActiveRow &&
-                    relationEnumerator.MoveNext())
+                command = this.GetCommand(string.Format(
+                    "select * from relation_tags where relation_id in ({0}) order by relation_id", relationIds.BuildCommaSeperated()));
+                reader = command.ExecuteReaderWrapper();
+                if (reader.Read())
                 {
-                    reader.AddTags(relationEnumerator.Current);
+                    var relationEnumerator = relations.GetEnumerator();
+                    while (reader.HasActiveRow &&
+                        relationEnumerator.MoveNext())
+                    {
+                        reader.AddTags(relationEnumerator.Current);
+                    }
                 }
             }
 
@@ -496,7 +522,7 @@ namespace OsmSharp.Db.SQLServer
             cmd.Parameters.AddWithValue("changeset_id", node.ChangeSetId.Value);
             cmd.Parameters.AddWithValue("visible", node.Visible.Value);
             cmd.Parameters.AddWithValue("timestamp", node.TimeStamp.Value.ToUnixTime());
-            cmd.Parameters.AddWithValue("tile", Tiles.Tile.CreateAroundLocation(node.Latitude.Value, node.Longitude.Value, Constants.DefaultZoom).Id);
+            cmd.Parameters.Add("tile", SqlDbType.BigInt).Value = Tiles.Tile.CreateAroundLocation(node.Latitude.Value, node.Longitude.Value, Constants.DefaultZoom).Id;
             cmd.Parameters.AddWithValue("version", node.Version.Value);
             cmd.Parameters.AddWithValue("usr", node.UserName);
             cmd.Parameters.AddWithValue("usr_id", node.UserId.Value);
@@ -513,7 +539,7 @@ namespace OsmSharp.Db.SQLServer
                 cmd.Parameters.AddWithValue("changeset_id", node.ChangeSetId.Value);
                 cmd.Parameters.AddWithValue("visible", node.Visible.Value);
                 cmd.Parameters.AddWithValue("timestamp", node.TimeStamp.Value.ToUnixTime());
-                cmd.Parameters.AddWithValue("tile", Tiles.Tile.CreateAroundLocation(node.Latitude.Value, node.Longitude.Value, Constants.DefaultZoom).Id);
+                cmd.Parameters.Add("tile", SqlDbType.BigInt).Value = Tiles.Tile.CreateAroundLocation(node.Latitude.Value, node.Longitude.Value, Constants.DefaultZoom).Id;
                 cmd.Parameters.AddWithValue("version", node.Version.Value);
                 cmd.Parameters.AddWithValue("usr", node.UserName);
                 cmd.Parameters.AddWithValue("usr_id", node.UserId.Value);

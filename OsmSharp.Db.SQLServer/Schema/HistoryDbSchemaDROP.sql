@@ -17,5 +17,7 @@ IF OBJECT_ID('dbo.way', 'U') IS NOT NULL
     DROP TABLE dbo.way 
 IF OBJECT_ID('dbo.node', 'U') IS NOT NULL 
     DROP TABLE dbo.node
-IF OBJECT_ID('dbo.changesets', 'U') IS NOT NULL 
-    DROP TABLE dbo.changesets 
+IF OBJECT_ID('dbo.changeset', 'U') IS NOT NULL 
+    DROP TABLE dbo.changeset
+IF OBJECT_ID('changeset_changes', 'U') IS NOT NULL
+	DROP TABLE dbo.changeset_changes

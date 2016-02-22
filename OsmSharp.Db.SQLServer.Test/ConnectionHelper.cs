@@ -30,18 +30,18 @@ namespace OsmSharp.Db.SQLServer.Test
     /// </summary>
     public static class ConnectionHelper
     {
-        ///// <summary>
-        ///// Gets a connection to an empty history test db.
-        ///// </summary>
-        //public static SqlConnection GetConnectionToEmptyTestHistoryDb()
-        //{
-        //    var connection = new System.Data.SqlClient.SqlConnection(
-        //        Settings.Default.ConnectionString);
-        //    connection.Open();
-        //    OsmSharp.Db.SQLServer.Schema.Tools.HistoryDbDropSchema(connection);
-        //    OsmSharp.Db.SQLServer.Schema.Tools.HistoryDbCreateAndDetect(connection);
-        //    return connection;
-        //}
+        /// <summary>
+        /// Gets a connection to an empty history test db.
+        /// </summary>
+        public static SqlConnection GetConnectionToEmptyTestHistoryDb()
+        {
+            var connection = new System.Data.SqlClient.SqlConnection(
+                Settings.Default.ConnectionString);
+            connection.Open();
+            OsmSharp.Db.SQLServer.Schema.Tools.HistoryDbDropSchema(connection);
+            OsmSharp.Db.SQLServer.Schema.Tools.HistoryDbCreateAndDetect(connection);
+            return connection;
+        }
 
         /// <summary>
         /// Gets a connection to an empty snapshot test db.
