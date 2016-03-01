@@ -195,6 +195,31 @@ namespace OsmSharp.Db.SQLServer
         }
 
         /// <summary>
+        /// Gets unix timestamp as datetime.
+        /// </summary>
+        public DateTime? GetUnixDateTime(string name)
+        {
+            int i = -1;
+            if (!_columnIndexes.TryGetValue(name, out i))
+            {
+                throw new ArgumentOutOfRangeException(name);
+            }
+            return this.GetUnixDateTime(i);
+        }
+
+        /// <summary>
+        /// Gets unix date time.
+        /// </summary>
+        public DateTime? GetUnixDateTime(int ordinal)
+        {
+            if (_dbDataReader.IsDBNull(ordinal))
+            {
+                return null;
+            }
+            return _dbDataReader.GetInt64(ordinal).FromUnixTime();
+        }
+
+        /// <summary>
         /// Gets an datetime.
         /// </summary>
         public DateTime GetDateTime(string name)

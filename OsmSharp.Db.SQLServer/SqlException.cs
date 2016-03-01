@@ -20,29 +20,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-using System.Data.SqlClient;
+using System;
 
 namespace OsmSharp.Db.SQLServer
 {
     /// <summary>
-    /// Implements a snapshot db storing a snapshot of OSM-data in an SQLite database.
+    /// An exception related to sql.
     /// </summary>
-    public class SnapshotDb : OsmSharp.Db.SnapshotDb, ISnapshotDb
+    public class SqlException : Exception
     {
         /// <summary>
-        /// Creates a new snapshot db.
+        /// Creates a new sql exception.
         /// </summary>
-        public SnapshotDb(string connectionString)
-            : base(new Impl.SnapshotDbImpl(connectionString))
-        {
-
-        }
-
-        /// <summary>
-        /// Creates a new snapshot db.
-        /// </summary>
-        public SnapshotDb(SqlConnection connection)
-            : base(new Impl.SnapshotDbImpl(connection))
+        public SqlException(string message)
+            : base(message)
         {
 
         }

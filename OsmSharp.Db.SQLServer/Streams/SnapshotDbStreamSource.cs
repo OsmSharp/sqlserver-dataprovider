@@ -94,11 +94,14 @@ namespace OsmSharp.Db.SQLServer.Streams
             }
         }
 
+        private bool _initialized = false;
+
         /// <summary>
         /// Initializes this source.
         /// </summary>
-        public override void Initialize()
+        private void Initialize()
         {
+            _initialized = true;
             var command = this.GetCommand("SELECT id, latitude, longitude, changeset_id, visible, timestamp, tile, [version], usr, usr_id " +
                 "FROM dbo.node " +
                 "ORDER BY id");
@@ -174,7 +177,12 @@ namespace OsmSharp.Db.SQLServer.Streams
         /// </summary>
         public override bool MoveNext(bool ignoreNodes, bool ignoreWays, bool ignoreRelations)
         {
-            if(_currentType == null)
+            if (!_initialized)
+            {
+                this.Initialize();
+            }
+
+            if (_currentType == null)
             { // first move.
                 _currentType = OsmGeoType.Node;
                 _nodeTagsReader.Read();

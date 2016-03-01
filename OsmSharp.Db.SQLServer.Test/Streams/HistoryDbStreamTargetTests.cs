@@ -91,17 +91,13 @@ namespace OsmSharp.Db.SQLServer.Test.Streams
             Assert.IsTrue(reader.Read());
             var key = reader.GetString("key");
             var value = reader.GetString("value");
-            var version = reader.GetInt32("node_version");
             Assert.IsTrue((key == "key0" && value == "value0") ||
                 key == "key1" && value == "value1");
-            Assert.AreEqual(1, version);
             Assert.IsTrue(reader.Read());
             key = reader.GetString("key");
             value = reader.GetString("value");
-            version = reader.GetInt32("node_version");
             Assert.IsTrue((key == "key0" && value == "value0") ||
                 key == "key1" && value == "value1");
-            Assert.AreEqual(1, version);
         }
 
         /// <summary>
@@ -163,16 +159,13 @@ namespace OsmSharp.Db.SQLServer.Test.Streams
             Assert.IsTrue(reader.Read());
             var key = reader.GetString("key");
             var value = reader.GetString("value");
-            var version = reader.GetInt32("way_version");
             Assert.IsTrue((key == "key0" && value == "value0") ||
                 key == "key1" && value == "value1");
-            Assert.AreEqual(1, version);
             Assert.IsTrue(reader.Read());
             key = reader.GetString("key");
             value = reader.GetString("value");
             Assert.IsTrue((key == "key0" && value == "value0") ||
                 key == "key1" && value == "value1");
-            Assert.AreEqual(1, version);
 
             command = new SqlCommand("select * from way_nodes where way_id = @id", connection);
             command.Parameters.AddWithValue("id", 1);
@@ -180,15 +173,12 @@ namespace OsmSharp.Db.SQLServer.Test.Streams
             Assert.IsTrue(reader.Read());
             Assert.AreEqual(0, reader.GetInt32("sequence_id"));
             Assert.AreEqual(12, reader.GetInt64("node_id"));
-            Assert.AreEqual(1, reader.GetInt32("way_version"));
             Assert.IsTrue(reader.Read());
             Assert.AreEqual(1, reader.GetInt32("sequence_id"));
             Assert.AreEqual(23, reader.GetInt64("node_id"));
-            Assert.AreEqual(1, reader.GetInt32("way_version"));
             Assert.IsTrue(reader.Read());
             Assert.AreEqual(2, reader.GetInt32("sequence_id"));
             Assert.AreEqual(34, reader.GetInt64("node_id"));
-            Assert.AreEqual(1, reader.GetInt32("way_version"));
         }
 
         /// <summary>
@@ -265,13 +255,11 @@ namespace OsmSharp.Db.SQLServer.Test.Streams
             Assert.IsTrue(reader.Read());
             var key = reader.GetString("key");
             var value = reader.GetString("value");
-            var version = reader.GetInt32("relation_version");
             Assert.IsTrue((key == "key0" && value == "value0") ||
                 key == "key1" && value == "value1");
             Assert.IsTrue(reader.Read());
             key = reader.GetString("key");
             value = reader.GetString("value");
-            version = reader.GetInt32("relation_version");
             Assert.IsTrue((key == "key0" && value == "value0") ||
                 key == "key1" && value == "value1");
 
@@ -283,19 +271,16 @@ namespace OsmSharp.Db.SQLServer.Test.Streams
             Assert.AreEqual(12, reader.GetInt64("member_id"));
             Assert.AreEqual(0, reader.GetInt32("member_type"));
             Assert.AreEqual("first", reader.GetString("member_role"));
-            Assert.AreEqual(1, reader.GetInt32("relation_version"));
             Assert.IsTrue(reader.Read());
             Assert.AreEqual(1, reader.GetInt32("sequence_id"));
             Assert.AreEqual(23, reader.GetInt64("member_id"));
             Assert.AreEqual(1, reader.GetInt32("member_type"));
             Assert.AreEqual("second", reader.GetString("member_role"));
-            Assert.AreEqual(1, reader.GetInt32("relation_version"));
             Assert.IsTrue(reader.Read());
             Assert.AreEqual(2, reader.GetInt32("sequence_id"));
             Assert.AreEqual(34, reader.GetInt64("member_id"));
             Assert.AreEqual(2, reader.GetInt32("member_type"));
             Assert.AreEqual("third", reader.GetString("member_role"));
-            Assert.AreEqual(1, reader.GetInt32("relation_version"));
         }
     }
 }

@@ -106,8 +106,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="OsmSharp, Version=2.0.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\OsmSharp.Core.2.0.3-alpha\lib\net40\OsmSharp.dll</HintPath>
+    <Reference Include="OsmSharp, Version=2.0.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\OsmSharp.Core.2.0.6-alpha\lib\net40\OsmSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -127,10 +127,17 @@
       <Link>Properties\SharedAssemblyVersion.cs</Link>
     </Compile>
     <Compile Include="Constants.cs" />
+    <Compile Include="Enumerators\MergedEnumerable.cs" />
+    <Compile Include="Enumerators\NodeEnumerable.cs" />
+    <Compile Include="Enumerators\RelationEnumerable.cs" />
+    <Compile Include="Enumerators\WayEnumerable.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="DbDataReaderWrapper.cs" />
     <Compile Include="HistoryDb.cs" />
+    <Compile Include="Impl\HistoryDbImpl.cs" />
+    <Compile Include="Impl\SnapshotDbImpl.cs" />
     <Compile Include="Schema\SchemaConstants.cs" />
+    <Compile Include="SqlException.cs" />
     <Compile Include="SqlExtensions.cs" />
     <Compile Include="Streams\HistoryDbStreamTarget.cs" />
     <Compile Include="Streams\HistoryDbStreamSource.cs" />
@@ -148,20 +155,19 @@
     <EmbeddedResource Include="Schema\SnapshotDbSchemaDDL.sql" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Schema\SnapshotDbSchemaConstraints.sql" />
     <EmbeddedResource Include="Schema\SnapshotDbSchemaDROP.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Schema\SnapshotDbDeleteAllData.sql" />
+    <EmbeddedResource Include="Schema\SnapshotDbSchemaDELETE.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Schema\HistoryDbSchemaDDL.sql" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Schema\HistoryDbDeleteAllData.sql" />
+    <EmbeddedResource Include="Schema\HistoryDbSchemaDELETE.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Schema\HistoryDbSchemaDROP.sql" />

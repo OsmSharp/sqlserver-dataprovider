@@ -94,44 +94,48 @@ namespace OsmSharp.Db.SQLServer.Streams
             }
         }
 
+        private bool _initialized = false;
+
         /// <summary>
         /// Initializes this source.
         /// </summary>
-        public override void Initialize()
+        private void Initialize()
         {
+            _initialized = true;
+
             var command = this.GetCommand("SELECT id, latitude, longitude, changeset_id, visible, timestamp, tile, [version], usr, usr_id " +
                 "FROM dbo.node " +
-                "ORDER BY id, [version]");
+                "ORDER BY id ");
             _nodeReader = new DbDataReaderWrapper(command.ExecuteReader());
-            command = this.GetCommand("SELECT node_id, [node_version], [key], value " +
+            command = this.GetCommand("SELECT node_id, [key], value " +
                 "FROM dbo.node_tags " +
-                "ORDER BY node_id, [node_version]");
+                "ORDER BY node_id ");
             _nodeTagsReader = new DbDataReaderWrapper(command.ExecuteReader());
 
             command = this.GetCommand("SELECT id, changeset_id, visible, timestamp, [version], usr, usr_id " +
                 "FROM dbo.way " +
-                "ORDER BY id, [version]");
+                "ORDER BY id ");
             _wayReader = new DbDataReaderWrapper(command.ExecuteReader());
-            command = this.GetCommand("SELECT way_id, [way_version], [key], value " +
+            command = this.GetCommand("SELECT way_id, [key], value " +
                 "FROM dbo.way_tags " +
-                "ORDER BY way_id, [way_version]");
+                "ORDER BY way_id ");
             _wayTagsReader = new DbDataReaderWrapper(command.ExecuteReader());
-            command = this.GetCommand("SELECT way_id, [way_version], node_id, sequence_id  " +
+            command = this.GetCommand("SELECT way_id, node_id, sequence_id  " +
                 "FROM dbo.way_nodes " +
-                "ORDER BY way_id, [way_version], sequence_id");
+                "ORDER BY way_id, sequence_id");
             _wayNodesReader = new DbDataReaderWrapper(command.ExecuteReader());
 
             command = this.GetCommand("SELECT id, changeset_id, visible, timestamp, [version], usr, usr_id " +
                 "FROM dbo.relation " +
-                "ORDER BY id, [version]");
+                "ORDER BY id ");
             _relationReader = new DbDataReaderWrapper(command.ExecuteReader());
-            command = this.GetCommand("SELECT relation_id, [relation_version], [key], value " +
+            command = this.GetCommand("SELECT relation_id, [key], value " +
                 "FROM dbo.relation_tags " +
-                "ORDER BY relation_id, [relation_version]");
+                "ORDER BY relation_id ");
             _relationTagsReader = new DbDataReaderWrapper(command.ExecuteReader());
-            command = this.GetCommand("SELECT relation_id, [relation_version], member_type, member_role, member_id, sequence_id " +
+            command = this.GetCommand("SELECT relation_id, member_type, member_role, member_id, sequence_id " +
                 "FROM dbo.relation_members " +
-                "ORDER BY relation_id, [relation_version], sequence_id");
+                "ORDER BY relation_id, sequence_id");
             _relationMembersReader = new DbDataReaderWrapper(command.ExecuteReader());
         }
 
@@ -174,7 +178,12 @@ namespace OsmSharp.Db.SQLServer.Streams
         /// </summary>
         public override bool MoveNext(bool ignoreNodes, bool ignoreWays, bool ignoreRelations)
         {
-            if(_currentType == null)
+            if (!_initialized)
+            {
+                this.Initialize();
+            }
+
+            if (_currentType == null)
             { // first move.
                 _currentType = OsmGeoType.Node;
                 _nodeTagsReader.Read();

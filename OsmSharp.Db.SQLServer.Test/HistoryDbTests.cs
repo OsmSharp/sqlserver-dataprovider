@@ -88,13 +88,11 @@ namespace OsmSharp.Db.SQLServer.Test
             var value = reader.GetString("value");
             Assert.IsTrue((key == "key0" && value == "value0") ||
                 key == "key1" && value == "value1");
-            Assert.AreEqual(1, reader.GetInt32("node_version"));
             Assert.IsTrue(reader.Read());
             key = reader.GetString("key");
             value = reader.GetString("value");
             Assert.IsTrue((key == "key0" && value == "value0") ||
                 key == "key1" && value == "value1");
-            Assert.AreEqual(1, reader.GetInt32("node_version"));
         }
 
         /// <summary>
@@ -627,7 +625,7 @@ namespace OsmSharp.Db.SQLServer.Test
             Assert.IsInstanceOf<Node>(result[0]);
             node = result[0] as Node;
             Assert.AreEqual(1, node.Id);
-            Assert.IsNull(node.Tags);
+            Assert.IsTrue(node.Tags == null || node.Tags.Count == 0);
             Assert.IsInstanceOf<Node>(result[1]);
             node = result[1] as Node;
             Assert.AreEqual(2, node.Id);

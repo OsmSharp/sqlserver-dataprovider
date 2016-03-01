@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+using OsmSharp.Logging;
 using System;
 using System.Data.SqlClient;
 using System.IO;
@@ -33,104 +34,102 @@ namespace OsmSharp.Db.SQLServer.Schema
     /// </summary>
     public static class Tools
     {
+        private static Logger _logger = new Logger("Schema.Tools");
+        
+        /// <summary>
+        /// Detects a snapshot db.
+        /// </summary>
+        public static bool SnapshotDbDetect(this SqlConnection connection)
+        {
+            //check if Simple Schema table exists
+            const string sql = "select object_id('dbo.node', 'U')";
+            object res;
+            using (var cmd = new SqlCommand(sql, connection))
+            {
+                res = cmd.ExecuteScalar();
+            }
+
+            //if table exists, we are OK
+            return (!DBNull.Value.Equals(res));
+        }
+
         /// <summary>
         /// Creates/detects the snapshot db schema.
         /// </summary>
-        public static void SnapshotDbCreateAndDetect(SqlConnection connection)
+        public static void SnapshotDbCreateAndDetect(this SqlConnection connection)
         {
-            //check if Simple Schema table exists
-            const string sql = "select object_id('dbo.node', 'U')";
-            object res;
-            using (var cmd = new SqlCommand(sql, connection))
+            if (!SnapshotDbDetect(connection))
             {
-                res = cmd.ExecuteScalar();
+                _logger.Log(TraceEventType.Information,
+                        "Creating snapshot database schema...");
+                ExecuteSQL(connection, "SnapshotDbSchemaDDL.sql");
             }
-
-            //if table exists, we are OK
-            if (!DBNull.Value.Equals(res))
-                return;
-
-            OsmSharp.Logging.Logger.Log("OsmSharp.Db.SQLServer.SchemaTools.SQLServerSchemaTools", 
-                OsmSharp.Logging.TraceEventType.Information,
-                    "Creating snapshot database schema...");
-            ExecuteSQL(connection, "SnapshotDbSchemaDDL.sql");
-        }
-        /// <summary>
-        /// Creates/detects the history db schema.
-        /// </summary>
-        public static void HistoryDbCreateAndDetect(SqlConnection connection)
-        {
-            //check if Simple Schema table exists
-            const string sql = "select object_id('dbo.node', 'U')";
-            object res;
-            using (var cmd = new SqlCommand(sql, connection))
-            {
-                res = cmd.ExecuteScalar();
-            }
-
-            //if table exists, we are OK
-            if (!DBNull.Value.Equals(res))
-                return;
-
-            OsmSharp.Logging.Logger.Log("SQLServerSchemaTools",
-                OsmSharp.Logging.TraceEventType.Information,
-                    "Creating history database schema...");
-            ExecuteSQL(connection, "HistoryDbSchemaDDL.sql");
         }
 
         /// <summary>
         /// Drops the snapshot schema.
         /// </summary>
-        public static void SnapshotDbDropSchema(SqlConnection connection)
+        public static void SnapshotDbDropSchema(this SqlConnection connection)
         {
-            OsmSharp.Logging.Logger.Log("SQLServerSchemaTools", 
-                OsmSharp.Logging.TraceEventType.Information, 
-                    "Dropping snapshot database schema...");
+            _logger.Log(TraceEventType.Information, "Dropping snapshot database schema...");
             ExecuteSQL(connection, "SnapshotDbSchemaDROP.sql");
+        }
+
+        /// <summary>
+        /// Deletes all data.
+        /// </summary>
+        public static void SnapshotDbDeleteAll(this SqlConnection connection)
+        {
+            _logger.Log(TraceEventType.Information, "Delete all data in snapshot database schema...");
+            ExecuteSQL(connection, "SnapshotDbSchemaDELETE.sql");
+        }
+
+        /// <summary>
+        /// Detects a history db.
+        /// </summary>
+        public static bool HistoryDbDetect(this SqlConnection connection)
+        {
+            //check if Simple Schema table exists
+            const string sql = "select object_id('dbo.node', 'U')";
+            object res;
+            using (var cmd = new SqlCommand(sql, connection))
+            {
+                res = cmd.ExecuteScalar();
+            }
+
+            //if table exists, we are OK
+            return (!DBNull.Value.Equals(res));
+        }
+
+        /// <summary>
+        /// Creates/detects the history db schema.
+        /// </summary>
+        public static void HistoryDbCreateAndDetect(SqlConnection connection)
+        {
+            if (!connection.HistoryDbDetect())
+            {
+                _logger.Log(TraceEventType.Information,
+                        "Creating history database schema...");
+                ExecuteSQL(connection, "HistoryDbSchemaDDL.sql");
+            }
+        }
+
+        /// <summary>
+        /// Deletes all data in the history schema.
+        /// </summary>
+        public static void HistoryDbDeleteAll(this SqlConnection connection)
+        {
+            _logger.Log(TraceEventType.Information, "Deleting all data in this database schema...");
+            ExecuteSQL(connection, "HistoryDbSchemaDELETE.sql");
         }
 
         /// <summary>
         /// Drops the history schema.
         /// </summary>
-        public static void HistoryDbDropSchema(SqlConnection connection)
+        public static void HistoryDbDropSchema(this SqlConnection connection)
         {
-            OsmSharp.Logging.Logger.Log("SQLServerSchemaTools",
-                OsmSharp.Logging.TraceEventType.Information,
-                    "Dropping history database schema...");
+            _logger.Log(TraceEventType.Information, "Dropping history database schema...");
             ExecuteSQL(connection, "HistoryDbSchemaDROP.sql");
-        }
-
-        /// <summary>
-        /// Adds indexes, removes duplicates and adds constraints
-        /// </summary>
-        public static void SnapshotDbAddConstraints(SqlConnection connection)
-        {
-            OsmSharp.Logging.Logger.Log("SQLServerSchemaTools", 
-                OsmSharp.Logging.TraceEventType.Information, 
-                    "Adding snapshot database constraints...");
-            ExecuteSQL(connection, "SnapshotDbSchemaConstraints.sql");
-        }
-
-        /// <summary>
-        /// Deletes all data.
-        /// </summary>
-        public static void SnapshotDbDeleteAll(SqlConnection connection)
-        {
-            OsmSharp.Logging.Logger.Log("SQLServerSchemaTools",
-                OsmSharp.Logging.TraceEventType.Information,
-                    "Deleting snapshot all data...");
-            ExecuteSQL(connection, "SnapshotDbDeleteAllData.sql");
-        }
-
-        /// <summary>
-        /// Deletes all data.
-        /// </summary>
-        public static void HistoryDbDeleteAll(SqlConnection connection)
-        {
-            OsmSharp.Logging.Logger.Log("SQLServerSchemaTools",
-                OsmSharp.Logging.TraceEventType.Information,
-                    "Deleting history all data...");
-            ExecuteSQL(connection, "HistoryDbDeleteAllData.sql");
         }
 
         /// <summary>

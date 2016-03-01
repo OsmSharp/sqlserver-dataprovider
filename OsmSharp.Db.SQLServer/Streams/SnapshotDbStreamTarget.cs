@@ -461,11 +461,6 @@ namespace OsmSharp.Db.SQLServer.Streams
         {
             if(_connection != null)
             {
-                if(_createAndDetectSchema)
-                {
-                    Schema.Tools.SnapshotDbAddConstraints(_connection);
-                }
-
                 if (!string.IsNullOrWhiteSpace(_connectionString))
                 {
                     _connection.Close();

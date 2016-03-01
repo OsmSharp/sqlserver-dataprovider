@@ -136,7 +136,6 @@ namespace OsmSharp.Db.SQLServer.Streams
             _nodeTagsTable = new DataTable();
             _nodeTagsTable.BeginLoadData();
             _nodeTagsTable.Columns.Add(new DataColumn("node_id", typeof(long)));
-            _nodeTagsTable.Columns.Add(new DataColumn("node_version", typeof(int)));
             _nodeTagsTable.Columns.Add(new DataColumn("key", typeof(string)));
             _nodeTagsTable.Columns.Add(new DataColumn("value", typeof(string)));
         }
@@ -158,7 +157,6 @@ namespace OsmSharp.Db.SQLServer.Streams
             _wayTagsTable = new DataTable();
             _wayTagsTable.BeginLoadData();
             _wayTagsTable.Columns.Add(new DataColumn("way_id", typeof(long)));
-            _wayTagsTable.Columns.Add(new DataColumn("way_version", typeof(int)));
             _wayTagsTable.Columns.Add(new DataColumn("key", typeof(string)));
             _wayTagsTable.Columns.Add(new DataColumn("value", typeof(string)));
 
@@ -166,7 +164,6 @@ namespace OsmSharp.Db.SQLServer.Streams
             _wayNodesTable = new DataTable();
             _wayNodesTable.BeginLoadData();
             _wayNodesTable.Columns.Add(new DataColumn("way_id", typeof(long)));
-            _wayNodesTable.Columns.Add(new DataColumn("way_version", typeof(int)));
             _wayNodesTable.Columns.Add(new DataColumn("node_id", typeof(long)));
             _wayNodesTable.Columns.Add(new DataColumn("sequence_id", typeof(int)));
         }
@@ -188,7 +185,6 @@ namespace OsmSharp.Db.SQLServer.Streams
             _relationTagsTable = new DataTable();
             _relationTagsTable.BeginLoadData();
             _relationTagsTable.Columns.Add(new DataColumn("relation_id", typeof(long)));
-            _relationTagsTable.Columns.Add(new DataColumn("relation_version", typeof(int)));
             _relationTagsTable.Columns.Add(new DataColumn("key", typeof(string)));
             _relationTagsTable.Columns.Add(new DataColumn("value", typeof(string)));
 
@@ -196,7 +192,6 @@ namespace OsmSharp.Db.SQLServer.Streams
             _relationMembersTable = new DataTable();
             _relationMembersTable.BeginLoadData();
             _relationMembersTable.Columns.Add(new DataColumn("relation_id", typeof(long)));
-            _relationMembersTable.Columns.Add(new DataColumn("relation_version", typeof(int)));
             _relationMembersTable.Columns.Add(new DataColumn("member_type", typeof(short)));
             _relationMembersTable.Columns.Add(new DataColumn("member_id", typeof(long)));
             _relationMembersTable.Columns.Add(new DataColumn("member_role", typeof(string)));
@@ -274,7 +269,6 @@ namespace OsmSharp.Db.SQLServer.Streams
                 {
                     var tagRow = _nodeTagsTable.NewRow();
                     tagRow["key"] = tag.Key.Trim().Truncate(SchemaConstants.NodeTagsKey);
-                    tagRow["node_version"] = node.Version.ConvertToDBValue();
                     tagRow["node_id"] = node.Id.Value;
                     tagRow["value"] = tag.Value.Trim().Truncate(SchemaConstants.NodeTagsValue);
 
@@ -327,7 +321,6 @@ namespace OsmSharp.Db.SQLServer.Streams
                     {
                         var tagRow = _wayTagsTable.NewRow();
                         tagRow["way_id"] = way.Id.Value;
-                        tagRow["way_version"] = way.Version.ConvertToDBValue();
                         tagRow["key"] = key;
                         tagRow["value"] = tag.Value.Truncate(SchemaConstants.WayTagsValue);
 
@@ -343,7 +336,6 @@ namespace OsmSharp.Db.SQLServer.Streams
                 {
                     var tagRow = _wayNodesTable.NewRow();
                     tagRow["way_id"] = way.Id.Value;
-                    tagRow["way_version"] = way.Version.ConvertToDBValue();
                     tagRow["node_id"] = way.Nodes[idx];
                     tagRow["sequence_id"] = idx;
 
@@ -390,7 +382,6 @@ namespace OsmSharp.Db.SQLServer.Streams
                 {
                     var tagRow = _relationTagsTable.NewRow();
                     tagRow["relation_id"] = relation.Id.Value;
-                    tagRow["relation_version"] = relation.Version.ConvertToDBValue();
                     tagRow["key"] = tag.Key.Truncate(SchemaConstants.RelationTagsKey);
                     tagRow["value"] = tag.Value.Truncate(SchemaConstants.RelationTagsValue);
 
@@ -407,7 +398,6 @@ namespace OsmSharp.Db.SQLServer.Streams
 
                     DataRow tagRow = _relationMembersTable.NewRow();
                     tagRow["relation_id"] = relation.Id.Value;
-                    tagRow["relation_version"] = relation.Version.ConvertToDBValue();
                     tagRow["member_type"] = this.ConvertMemberType(relation.Members[idx].Type).Value;
                     tagRow["member_id"] = member.Id;
                     tagRow["member_role"] = member.Role.Truncate(SchemaConstants.RelationMemberRole);

@@ -48,6 +48,7 @@ namespace OsmSharp.Data.SQLServer.Test.Functional
                 Db.SQLServer.Schema.Tools.HistoryDbDropSchema(connection);
                 Db.SQLServer.Schema.Tools.SnapshotDbDropSchema(connection);
             }
+
             //Tests.ImportRunner.TestImportSnapshotDbBelgium();
             Tests.ImportRunner.TestImportHistoryDbBelgium();
 
